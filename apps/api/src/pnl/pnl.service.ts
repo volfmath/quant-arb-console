@@ -57,9 +57,89 @@ export class PnlService {
       total: tasks.length,
     };
   }
+
+  byStrategy() {
+    const rows = new Map<string, { strategy_id: string; tasks: number; funding_income: number; fee_cost: number; net_pnl: number }>();
+    for (const task of this.tasksService.list().items) {
+      const strategyId = task.strategy_id ?? 'manual';
+      const row =
+        rows.get(strategyId) ??
+        rows
+          .set(strategyId, {
+            strategy_id: strategyId,
+            tasks: 0,
+            funding_income: 0,
+            fee_cost: 0,
+            net_pnl: 0,
+          })
+          .get(strategyId)!;
+      row.tasks += 1;
+      row.funding_income = round(row.funding_income + task.funding_income);
+      row.fee_cost = round(row.fee_cost + task.trading_fee);
+      row.net_pnl = round(row.net_pnl + task.net_pnl);
+    }
+
+    return { items: [...rows.values()], total: rows.size };
+  }
+
+  byExchange() {
+    const rows = new Map<string, { exchange: string; legs: number; funding_income: number; fee_cost: number; net_pnl: number }>();
+    for (const task of this.tasksService.list().items) {
+      for (const exchange of [task.long_exchange, task.short_exchange]) {
+        const row =
+          rows.get(exchange) ??
+          rows
+            .set(exchange, {
+              exchange,
+              legs: 0,
+              funding_income: 0,
+              fee_cost: 0,
+              net_pnl: 0,
+            })
+            .get(exchange)!;
+        row.legs += 1;
+        row.funding_income = round(row.funding_income + task.funding_income / 2);
+        row.fee_cost = round(row.fee_cost + task.trading_fee / 2);
+        row.net_pnl = round(row.net_pnl + task.net_pnl / 2);
+      }
+    }
+
+    return { items: [...rows.values()], total: rows.size };
+  }
+
+  exportCsv(): string {
+    const rows = this.details().items;
+    const header = [
+      'task_id',
+      'task_number',
+      'unified_symbol',
+      'long_exchange',
+      'short_exchange',
+      'realized_pnl',
+      'unrealized_pnl',
+      'funding_income',
+      'fee_cost',
+      'net_pnl',
+      'snapshot_at',
+    ];
+    const body = rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(','));
+    return [header.join(','), ...body].join('\n');
+  }
 }
 
 function sum(values: number[]): number {
-  return Number(values.reduce((total, value) => total + value, 0).toFixed(8));
+  return round(values.reduce((total, value) => total + value, 0));
 }
 
+function round(value: number): number {
+  return Number(value.toFixed(8));
+}
+
+function csvCell(value: unknown): string {
+  const text = String(value ?? '');
+  if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+
+  return text;
+}

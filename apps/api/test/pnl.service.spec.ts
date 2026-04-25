@@ -24,5 +24,14 @@ describe('PnlService', () => {
     expect(summary.net_pnl).toBe(0.16);
     expect(pnl.details().total).toBe(1);
     expect(pnl.trend().points).toHaveLength(1);
+    expect(pnl.byStrategy()).toMatchObject({ total: 1, items: [{ strategy_id: 'manual', net_pnl: 0.16 }] });
+    expect(pnl.byExchange()).toMatchObject({
+      total: 2,
+      items: [
+        { exchange: 'binance', net_pnl: 0.08 },
+        { exchange: 'okx', net_pnl: 0.08 },
+      ],
+    });
+    expect(pnl.exportCsv()).toContain('task_id,task_number,unified_symbol');
   });
 });

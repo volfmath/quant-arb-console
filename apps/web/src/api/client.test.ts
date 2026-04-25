@@ -8,12 +8,15 @@ import {
   createUser,
   deleteAccount,
   executeTask,
+  exportPnlCsv,
   acknowledgeAlert,
   dismissAlert,
   getDashboardAssetSummary,
   getDashboardRiskSummary,
   getDashboardStrategySummary,
   getOpportunities,
+  getPnlByExchange,
+  getPnlByStrategy,
   getPnlDetails,
   getPnlSummary,
   getPnlTrend,
@@ -204,11 +207,15 @@ describe('api client', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({ items: [], total: 0, points: [] }),
+      text: async () => 'task_id,net_pnl\n',
     } as Response);
 
     await getPnlSummary('abc');
     await getPnlTrend('abc');
     await getPnlDetails('abc');
+    await getPnlByStrategy('abc');
+    await getPnlByExchange('abc');
+    await exportPnlCsv('abc');
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -223,6 +230,16 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
       'http://localhost:3000/api/v1/analytics/pnl/details',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:3000/api/v1/analytics/pnl/by-strategy',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'http://localhost:3000/api/v1/analytics/pnl/export',
       expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
     );
   });

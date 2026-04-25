@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, Header, Inject, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { PnlService } from './pnl.service';
@@ -22,5 +22,22 @@ export class PnlController {
   @Get('details')
   details() {
     return this.pnlService.details();
+  }
+
+  @Get('by-strategy')
+  byStrategy() {
+    return this.pnlService.byStrategy();
+  }
+
+  @Get('by-exchange')
+  byExchange() {
+    return this.pnlService.byExchange();
+  }
+
+  @Get('export')
+  @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="pnl.csv"')
+  exportCsv() {
+    return this.pnlService.exportCsv();
   }
 }

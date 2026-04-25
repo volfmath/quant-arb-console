@@ -1,7 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, Progress, Table } from 'antd';
+import { Alert, Button, Progress, Space, Table, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { getPnlDetails, getPnlSummary, getPnlTrend, type PnlDetail, type PnlTrendPoint } from '../api/client';
+import {
+  exportPnlCsv,
+  getPnlByExchange,
+  getPnlByStrategy,
+  getPnlDetails,
+  getPnlSummary,
+  getPnlTrend,
+  type PnlByExchange,
+  type PnlByStrategy,
+  type PnlDetail,
+  type PnlTrendPoint,
+} from '../api/client';
 import { useAuthStore } from '../auth/auth-store';
 
 const detailColumns: ColumnsType<PnlDetail> = [
@@ -38,6 +49,32 @@ const detailColumns: ColumnsType<PnlDetail> = [
   },
 ];
 
+const strategyColumns: ColumnsType<PnlByStrategy> = [
+  { title: 'Strategy', dataIndex: 'strategy_id', key: 'strategy_id' },
+  { title: 'Tasks', dataIndex: 'tasks', key: 'tasks' },
+  { title: 'Funding', dataIndex: 'funding_income', key: 'funding_income', render: (value: number) => formatMoney(value, 4) },
+  { title: 'Fee', dataIndex: 'fee_cost', key: 'fee_cost', render: (value: number) => formatMoney(value, 4) },
+  {
+    title: 'Net PnL',
+    dataIndex: 'net_pnl',
+    key: 'net_pnl',
+    render: (value: number) => <span className={value >= 0 ? 'profit-text' : 'loss-text'}>{formatMoney(value, 4)}</span>,
+  },
+];
+
+const exchangeColumns: ColumnsType<PnlByExchange> = [
+  { title: 'Exchange', dataIndex: 'exchange', key: 'exchange' },
+  { title: 'Legs', dataIndex: 'legs', key: 'legs' },
+  { title: 'Funding', dataIndex: 'funding_income', key: 'funding_income', render: (value: number) => formatMoney(value, 4) },
+  { title: 'Fee', dataIndex: 'fee_cost', key: 'fee_cost', render: (value: number) => formatMoney(value, 4) },
+  {
+    title: 'Net PnL',
+    dataIndex: 'net_pnl',
+    key: 'net_pnl',
+    render: (value: number) => <span className={value >= 0 ? 'profit-text' : 'loss-text'}>{formatMoney(value, 4)}</span>,
+  },
+];
+
 export function PnlAnalyticsPage() {
   const token = useAuthStore((state) => state.token);
   const summaryQuery = useQuery({
@@ -55,9 +92,19 @@ export function PnlAnalyticsPage() {
     queryFn: () => getPnlDetails(token ?? ''),
     enabled: Boolean(token),
   });
+  const strategyQuery = useQuery({
+    queryKey: ['analytics', 'pnl', 'by-strategy'],
+    queryFn: () => getPnlByStrategy(token ?? ''),
+    enabled: Boolean(token),
+  });
+  const exchangeQuery = useQuery({
+    queryKey: ['analytics', 'pnl', 'by-exchange'],
+    queryFn: () => getPnlByExchange(token ?? ''),
+    enabled: Boolean(token),
+  });
 
   const loading = summaryQuery.isLoading || trendQuery.isLoading || detailsQuery.isLoading;
-  const hasError = summaryQuery.error || trendQuery.error || detailsQuery.error;
+  const hasError = summaryQuery.error || trendQuery.error || detailsQuery.error || strategyQuery.error || exchangeQuery.error;
 
   return (
     <section>
@@ -66,16 +113,27 @@ export function PnlAnalyticsPage() {
           <p className="eyebrow">Analytics</p>
           <h1>PnL Analytics</h1>
         </div>
-        <Button
-          onClick={() => {
-            void summaryQuery.refetch();
-            void trendQuery.refetch();
-            void detailsQuery.refetch();
-          }}
-          loading={summaryQuery.isFetching || trendQuery.isFetching || detailsQuery.isFetching}
-        >
-          Refresh
-        </Button>
+        <Space>
+          <Button onClick={() => void handleExport(token ?? '')}>Export CSV</Button>
+          <Button
+            onClick={() => {
+              void summaryQuery.refetch();
+              void trendQuery.refetch();
+              void detailsQuery.refetch();
+              void strategyQuery.refetch();
+              void exchangeQuery.refetch();
+            }}
+            loading={
+              summaryQuery.isFetching ||
+              trendQuery.isFetching ||
+              detailsQuery.isFetching ||
+              strategyQuery.isFetching ||
+              exchangeQuery.isFetching
+            }
+          >
+            Refresh
+          </Button>
+        </Space>
       </div>
 
       {hasError ? <Alert type="error" message="PnL analytics load failed" showIcon /> : null}
@@ -104,6 +162,33 @@ export function PnlAnalyticsPage() {
         </div>
       </section>
 
+      <section className="detail-grid">
+        <div>
+          <h2>By Strategy</h2>
+          <Table<PnlByStrategy>
+            rowKey="strategy_id"
+            className="data-table"
+            loading={strategyQuery.isLoading}
+            columns={strategyColumns}
+            dataSource={strategyQuery.data?.items ?? []}
+            pagination={false}
+            size="small"
+          />
+        </div>
+        <div>
+          <h2>By Exchange</h2>
+          <Table<PnlByExchange>
+            rowKey="exchange"
+            className="data-table"
+            loading={exchangeQuery.isLoading}
+            columns={exchangeColumns}
+            dataSource={exchangeQuery.data?.items ?? []}
+            pagination={false}
+            size="small"
+          />
+        </div>
+      </section>
+
       <Table<PnlDetail>
         rowKey="task_id"
         className="data-table pnl-table"
@@ -115,6 +200,18 @@ export function PnlAnalyticsPage() {
       />
     </section>
   );
+}
+
+async function handleExport(token: string) {
+  const csv = await exportPnlCsv(token);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'pnl.csv';
+  anchor.click();
+  URL.revokeObjectURL(url);
+  message.success('PnL CSV exported');
 }
 
 function Kpi({ title, value }: { title: string; value: string }) {

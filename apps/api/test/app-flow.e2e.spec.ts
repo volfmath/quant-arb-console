@@ -52,11 +52,17 @@ describe('Core API flow', () => {
     const orders = await get(`/tasks/${task.id}/orders`);
     const positions = await get(`/tasks/${task.id}/positions`);
     const pnl = await get('/analytics/pnl/summary');
+    const pnlByStrategy = await get('/analytics/pnl/by-strategy');
+    const pnlByExchange = await get('/analytics/pnl/by-exchange');
+    const pnlExport = await getText('/analytics/pnl/export');
 
     expect(executed.status).toBe('running');
     expect(orders.total).toBe(2);
     expect(positions.total).toBe(2);
     expect(pnl.net_pnl).toBe(0.16);
+    expect(pnlByStrategy.total).toBe(1);
+    expect(pnlByExchange.total).toBe(2);
+    expect(pnlExport).toContain('task_id,task_number,unified_symbol');
 
     const strategy = await post('/strategies', {
       name: '资金费套利_HTTP',
@@ -108,6 +114,16 @@ describe('Core API flow', () => {
 
   async function get(path: string) {
     return request(path, { method: 'GET' });
+  }
+
+  async function getText(path: string) {
+    const response = await fetch(`${baseUrl}/api/v1${path}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(response.ok, `GET ${path} failed with ${response.status}`).toBe(true);
+    return response.text();
   }
 
   async function post(path: string, body?: unknown) {

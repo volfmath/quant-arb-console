@@ -173,6 +173,22 @@ export type PnlDetailsResponse = {
   total: number;
 };
 
+export type PnlByStrategy = {
+  strategy_id: string;
+  tasks: number;
+  funding_income: number;
+  fee_cost: number;
+  net_pnl: number;
+};
+
+export type PnlByExchange = {
+  exchange: string;
+  legs: number;
+  funding_income: number;
+  fee_cost: number;
+  net_pnl: number;
+};
+
 export type StrategyRecord = {
   id: string;
   name: string;
@@ -487,6 +503,26 @@ export async function getPnlDetails(token: string): Promise<PnlDetailsResponse> 
   }
 
   return response.json() as Promise<PnlDetailsResponse>;
+}
+
+export async function getPnlByStrategy(token: string): Promise<ListResponse<PnlByStrategy>> {
+  return getList(token, 'analytics/pnl/by-strategy', 'PnL by strategy failed');
+}
+
+export async function getPnlByExchange(token: string): Promise<ListResponse<PnlByExchange>> {
+  return getList(token, 'analytics/pnl/by-exchange', 'PnL by exchange failed');
+}
+
+export async function exportPnlCsv(token: string): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/analytics/pnl/export`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('PnL export failed');
+  }
+
+  return response.text();
 }
 
 export async function getStrategies(token: string): Promise<StrategyListResponse> {
