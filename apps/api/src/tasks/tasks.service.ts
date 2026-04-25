@@ -30,6 +30,8 @@ export type ArbitrageTask = {
   margin_used: number;
   long_qty: number;
   short_qty: number;
+  funding_income: number;
+  trading_fee: number;
   realized_pnl: number;
   unrealized_pnl: number;
   net_pnl: number;
@@ -97,6 +99,8 @@ export class TasksService {
       margin_used: 0,
       long_qty: 0,
       short_qty: 0,
+      funding_income: 0,
+      trading_fee: 0,
       realized_pnl: 0,
       unrealized_pnl: 0,
       net_pnl: 0,
@@ -133,6 +137,10 @@ export class TasksService {
     task.margin_used = result.margin_used;
     task.long_qty = result.long_qty;
     task.short_qty = result.short_qty;
+    task.funding_income = result.funding_income;
+    task.trading_fee = result.trading_fee;
+    task.realized_pnl = Number((result.funding_income - result.trading_fee).toFixed(8));
+    task.net_pnl = task.realized_pnl;
     task.started_at = result.started_at;
     this.taskOrders.unshift(...result.orders);
     this.taskPositions.unshift(...result.positions);

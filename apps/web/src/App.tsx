@@ -9,6 +9,7 @@ import {
   getDashboardRiskSummary,
   getDashboardStrategySummary,
 } from './api/client';
+import { PnlAnalyticsPage } from './analytics/PnlAnalyticsPage';
 import { OpportunitiesPage } from './opportunities/OpportunitiesPage';
 import { createMenuItems } from './permissions/menu';
 import { TasksPage } from './tasks/TasksPage';
@@ -81,6 +82,8 @@ function ConsoleApp() {
               <OpportunitiesPage />
             ) : selectedMenu === 'tasks' ? (
               <TasksPage />
+            ) : selectedMenu === 'analytics' ? (
+              <PnlAnalyticsPage />
             ) : selectedMenu === 'alerts' ? (
               <AlertsPage />
             ) : (

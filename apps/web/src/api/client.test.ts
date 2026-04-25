@@ -8,6 +8,9 @@ import {
   getDashboardRiskSummary,
   getDashboardStrategySummary,
   getOpportunities,
+  getPnlDetails,
+  getPnlSummary,
+  getPnlTrend,
   getTaskOrders,
   getTaskPositions,
   getAlerts,
@@ -174,6 +177,33 @@ describe('api client', () => {
       2,
       'http://localhost:3000/api/v1/alerts/alert-1/acknowledge',
       expect.objectContaining({ method: 'PUT' }),
+    );
+  });
+
+  it('loads pnl analytics with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, points: [] }),
+    } as Response);
+
+    await getPnlSummary('abc');
+    await getPnlTrend('abc');
+    await getPnlDetails('abc');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/analytics/pnl/summary',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/analytics/pnl/trend',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:3000/api/v1/analytics/pnl/details',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
     );
   });
 });

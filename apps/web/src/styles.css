@@ -143,6 +143,87 @@ body {
   line-height: 24px;
 }
 
+.analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.analytics-panel {
+  min-height: 220px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.panel-heading span,
+.mix-legend,
+.empty-state,
+.trend-item span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.trend-bars {
+  min-height: 150px;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(42px, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+
+.trend-item {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.trend-bar {
+  width: 100%;
+  max-width: 44px;
+  border-radius: 6px 6px 2px 2px;
+}
+
+.trend-bar.positive {
+  background: #22c55e;
+}
+
+.trend-bar.negative {
+  background: #ef4444;
+}
+
+.mix-block {
+  padding-top: 38px;
+}
+
+.mix-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pnl-table {
+  margin-top: 16px;
+}
+
 .kpi-card span {
   display: block;
   color: var(--text-secondary);

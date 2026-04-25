@@ -17,6 +17,8 @@ describe('ExecutionService', () => {
       margin_used: 0,
       long_qty: 0,
       short_qty: 0,
+      funding_income: 0,
+      trading_fee: 0,
       realized_pnl: 0,
       unrealized_pnl: 0,
       net_pnl: 0,
@@ -28,6 +30,7 @@ describe('ExecutionService', () => {
     expect(result.status).toBe('running');
     expect(result.actual_position_size).toBe(200);
     expect(result.long_qty).toBe(result.short_qty);
+    expect(result.funding_income).toBeGreaterThan(result.trading_fee);
     expect(result.orders).toHaveLength(2);
     expect(result.positions).toHaveLength(2);
     expect(result.orders.map((order) => order.leg)).toEqual(['long', 'short']);

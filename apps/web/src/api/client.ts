@@ -134,6 +134,45 @@ export type AlertListResponse = {
   size: number;
 };
 
+export type PnlSummary = {
+  total_pnl: number;
+  realized_pnl: number;
+  unrealized_pnl: number;
+  funding_income: number;
+  fee_cost: number;
+  net_pnl: number;
+};
+
+export type PnlTrendPoint = {
+  time: string;
+  total: number;
+  funding: number;
+  fee: number;
+};
+
+export type PnlTrendResponse = {
+  points: PnlTrendPoint[];
+};
+
+export type PnlDetail = {
+  task_id: string;
+  task_number: number;
+  unified_symbol: string;
+  long_exchange: string;
+  short_exchange: string;
+  realized_pnl: number;
+  unrealized_pnl: number;
+  funding_income: number;
+  fee_cost: number;
+  net_pnl: number;
+  snapshot_at: string;
+};
+
+export type PnlDetailsResponse = {
+  items: PnlDetail[];
+  total: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -291,6 +330,42 @@ export async function getAlerts(token: string): Promise<AlertListResponse> {
   }
 
   return response.json() as Promise<AlertListResponse>;
+}
+
+export async function getPnlSummary(token: string): Promise<PnlSummary> {
+  const response = await fetch(`${API_BASE_URL}/analytics/pnl/summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('PnL summary failed');
+  }
+
+  return response.json() as Promise<PnlSummary>;
+}
+
+export async function getPnlTrend(token: string): Promise<PnlTrendResponse> {
+  const response = await fetch(`${API_BASE_URL}/analytics/pnl/trend`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('PnL trend failed');
+  }
+
+  return response.json() as Promise<PnlTrendResponse>;
+}
+
+export async function getPnlDetails(token: string): Promise<PnlDetailsResponse> {
+  const response = await fetch(`${API_BASE_URL}/analytics/pnl/details`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('PnL details failed');
+  }
+
+  return response.json() as Promise<PnlDetailsResponse>;
 }
 
 export async function acknowledgeAlert(token: string, alertId: string): Promise<AlertRecord> {

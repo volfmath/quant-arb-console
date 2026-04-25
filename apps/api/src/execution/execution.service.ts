@@ -7,6 +7,8 @@ export type ExecutionResult = {
   margin_used: number;
   long_qty: number;
   short_qty: number;
+  funding_income: number;
+  trading_fee: number;
   started_at: string;
   orders: ExecutedOrder[];
   positions: OpenPosition[];
@@ -56,6 +58,8 @@ export class ExecutionService {
       margin_used: Number((task.target_position_size / task.leverage).toFixed(8)),
       long_qty: quantity,
       short_qty: quantity,
+      funding_income: Number((task.target_position_size * 0.0012).toFixed(8)),
+      trading_fee: Number((task.target_position_size * 0.0004).toFixed(8)),
       started_at: openedAt,
       orders: [
         buildOrder(task, 'long', 'buy', quantity, openedAt),
