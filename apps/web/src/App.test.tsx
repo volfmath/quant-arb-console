@@ -24,7 +24,14 @@ describe('App', () => {
         id: 'user-1',
         username: 'admin',
         role: 'super_admin',
-        permissions: ['dashboard:view', 'opportunity:view', 'strategy:view', 'analytics:view', 'alert:view'],
+        permissions: [
+          'dashboard:view',
+          'opportunity:view',
+          'strategy:view',
+          'analytics:view',
+          'alert:view',
+          'settings:manage',
+        ],
       },
     });
 
@@ -35,6 +42,7 @@ describe('App', () => {
     expect(screen.getByText('套利机会')).toBeTruthy();
     expect(screen.getByText('策略管理')).toBeTruthy();
     expect(screen.getByText('PnL 分析')).toBeTruthy();
+    expect(screen.getByText('设置中心')).toBeTruthy();
     expect(screen.queryByText('风控中心')).toBeNull();
   });
 });

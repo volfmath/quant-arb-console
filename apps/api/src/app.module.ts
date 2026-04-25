@@ -11,6 +11,7 @@ import { PnlModule } from './pnl/pnl.module';
 import { PermissionGuard } from './permissions/permission.guard';
 import { RealtimeModule } from './realtime/realtime.module';
 import { RiskModule } from './risk/risk.module';
+import { SettingsModule } from './settings/settings.module';
 import { StrategiesModule } from './strategies/strategies.module';
 import { TasksModule } from './tasks/tasks.module';
 
@@ -25,6 +26,7 @@ import { TasksModule } from './tasks/tasks.module';
     OpportunitiesModule,
     PnlModule,
     RiskModule,
+    SettingsModule,
     StrategiesModule,
     TasksModule,
   ],

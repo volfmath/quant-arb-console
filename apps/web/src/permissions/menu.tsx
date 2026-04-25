@@ -5,6 +5,7 @@ import {
   DeploymentUnitOutlined,
   OrderedListOutlined,
   SafetyOutlined,
+  SettingOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
@@ -21,6 +22,7 @@ const menuDefinitions: MenuItem[] = [
   { key: 'analytics', icon: <BarChartOutlined />, label: 'PnL 分析', permission: 'analytics:view' },
   { key: 'risk', icon: <SafetyOutlined />, label: '风控中心', permission: 'risk:view' },
   { key: 'alerts', icon: <AlertOutlined />, label: '告警中心', permission: 'alert:view' },
+  { key: 'settings', icon: <SettingOutlined />, label: '设置中心', permission: 'settings:manage' },
 ];
 
 export function createMenuItems(permissions: string[]): MenuProps['items'] {

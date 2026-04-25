@@ -224,6 +224,12 @@ body {
   margin-top: 16px;
 }
 
+.table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 12px;
+}
+
 .kpi-card span {
   display: block;
   color: var(--text-secondary);

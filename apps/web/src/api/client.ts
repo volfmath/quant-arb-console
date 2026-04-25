@@ -209,6 +209,58 @@ export type CreateStrategyRequest = {
   leverage?: number;
 };
 
+export type ExchangeRecord = {
+  id: string;
+  name: string;
+  code: string;
+  status: 'active' | 'disabled';
+  is_testnet: boolean;
+  created_at: string;
+};
+
+export type AccountRecord = {
+  id: string;
+  exchange_code: string;
+  name: string;
+  status: 'active' | 'disabled' | 'deleted';
+  is_testnet: boolean;
+  created_at: string;
+  deleted_at?: string;
+};
+
+export type UserRecord = {
+  id: string;
+  username: string;
+  role: 'super_admin' | 'trader' | 'risk_manager' | 'viewer';
+  status: 'active' | 'disabled';
+  created_at: string;
+  updated_at: string;
+};
+
+export type AuditLogRecord = {
+  id: string;
+  action: string;
+  resourceType: string;
+  resourceId?: string;
+  createdAt: string;
+};
+
+export type SystemStatus = {
+  api_connection: string;
+  trading_service: string;
+  strategy_service: string;
+  exchange_mode: string;
+  version: string;
+  updated_at: string;
+};
+
+export type ListResponse<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -467,12 +519,117 @@ export async function toggleStrategy(token: string, strategyId: string): Promise
   return response.json() as Promise<StrategyRecord>;
 }
 
+export async function getExchanges(token: string): Promise<ListResponse<ExchangeRecord>> {
+  return getList(token, 'exchanges', 'Exchange list failed');
+}
+
+export async function createExchange(
+  token: string,
+  body: { name: string; code: string; is_testnet?: boolean },
+): Promise<ExchangeRecord> {
+  return postJson(token, 'exchanges', body, 'Exchange create failed') as Promise<ExchangeRecord>;
+}
+
+export async function getAccounts(token: string): Promise<ListResponse<AccountRecord>> {
+  return getList(token, 'accounts', 'Account list failed');
+}
+
+export async function createAccount(
+  token: string,
+  body: { exchange_code: string; name: string; is_testnet?: boolean },
+): Promise<AccountRecord> {
+  return postJson(token, 'accounts', body, 'Account create failed') as Promise<AccountRecord>;
+}
+
+export async function deleteAccount(token: string, accountId: string): Promise<AccountRecord> {
+  const response = await fetch(`${API_BASE_URL}/accounts/${accountId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Account delete failed');
+  }
+
+  return response.json() as Promise<AccountRecord>;
+}
+
+export async function getUsers(token: string): Promise<ListResponse<UserRecord>> {
+  return getList(token, 'users', 'User list failed');
+}
+
+export async function createUser(token: string, body: { username: string; role?: UserRecord['role'] }): Promise<UserRecord> {
+  return postJson(token, 'users', body, 'User create failed') as Promise<UserRecord>;
+}
+
+export async function updateUserRole(token: string, userId: string, role: UserRecord['role']): Promise<UserRecord> {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/role`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ role }),
+  });
+
+  if (!response.ok) {
+    throw new Error('User role update failed');
+  }
+
+  return response.json() as Promise<UserRecord>;
+}
+
+export async function getAuditLogs(token: string): Promise<ListResponse<AuditLogRecord>> {
+  return getList(token, 'audit-logs', 'Audit log list failed');
+}
+
+export async function getSystemStatus(token: string): Promise<SystemStatus> {
+  const response = await fetch(`${API_BASE_URL}/system/status`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('System status failed');
+  }
+
+  return response.json() as Promise<SystemStatus>;
+}
+
 export async function acknowledgeAlert(token: string, alertId: string): Promise<AlertRecord> {
   return updateAlert(token, alertId, 'acknowledge');
 }
 
 export async function dismissAlert(token: string, alertId: string): Promise<AlertRecord> {
   return updateAlert(token, alertId, 'dismiss');
+}
+
+async function getList<T>(token: string, path: string, errorMessage: string): Promise<ListResponse<T>> {
+  const response = await fetch(`${API_BASE_URL}/${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(errorMessage);
+  }
+
+  return response.json() as Promise<ListResponse<T>>;
+}
+
+async function postJson<T>(token: string, path: string, body: T, errorMessage: string): Promise<unknown> {
+  const response = await fetch(`${API_BASE_URL}/${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
 }
 
 async function updateAlert(token: string, alertId: string, action: 'acknowledge' | 'dismiss'): Promise<AlertRecord> {

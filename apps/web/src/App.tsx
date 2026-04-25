@@ -12,6 +12,7 @@ import {
 import { PnlAnalyticsPage } from './analytics/PnlAnalyticsPage';
 import { OpportunitiesPage } from './opportunities/OpportunitiesPage';
 import { createMenuItems } from './permissions/menu';
+import { SettingsPage } from './settings/SettingsPage';
 import { StrategiesPage } from './strategies/StrategiesPage';
 import { TasksPage } from './tasks/TasksPage';
 import './styles.css';
@@ -89,6 +90,8 @@ function ConsoleApp() {
               <PnlAnalyticsPage />
             ) : selectedMenu === 'alerts' ? (
               <AlertsPage />
+            ) : selectedMenu === 'settings' ? (
+              <SettingsPage />
             ) : (
               <DashboardShell username={user.username} role={user.role} token={useAuthStore.getState().token ?? ''} />
             )}

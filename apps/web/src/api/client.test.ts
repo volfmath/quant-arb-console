@@ -2,6 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createTaskFromOpportunity,
   createStrategy,
+  createAccount,
+  createExchange,
+  createUser,
+  deleteAccount,
   executeTask,
   acknowledgeAlert,
   dismissAlert,
@@ -12,6 +16,11 @@ import {
   getPnlDetails,
   getPnlSummary,
   getPnlTrend,
+  getAccounts,
+  getAuditLogs,
+  getExchanges,
+  getSystemStatus,
+  getUsers,
   getStrategies,
   getTaskOrders,
   getTaskPositions,
@@ -20,6 +29,7 @@ import {
   login,
   toggleStrategy,
   updateStrategy,
+  updateUserRole,
 } from './client';
 
 afterEach(() => {
@@ -241,6 +251,50 @@ describe('api client', () => {
       4,
       'http://localhost:3000/api/v1/strategies/strategy-1/toggle',
       expect.objectContaining({ method: 'PUT' }),
+    );
+  });
+
+  it('loads and mutates settings resources with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, page: 1, size: 0 }),
+    } as Response);
+
+    await getExchanges('abc');
+    await createExchange('abc', { name: 'Bybit Mock', code: 'bybit' });
+    await getAccounts('abc');
+    await createAccount('abc', { exchange_code: 'bybit', name: 'bybit-test' });
+    await deleteAccount('abc', 'account-1');
+    await getUsers('abc');
+    await createUser('abc', { username: 'viewer-1', role: 'viewer' });
+    await updateUserRole('abc', 'user-1', 'trader');
+    await getAuditLogs('abc');
+    await getSystemStatus('abc');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/exchanges',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/exchanges',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'http://localhost:3000/api/v1/accounts/account-1',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      8,
+      'http://localhost:3000/api/v1/users/user-1/role',
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      10,
+      'http://localhost:3000/api/v1/system/status',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
     );
   });
 });
