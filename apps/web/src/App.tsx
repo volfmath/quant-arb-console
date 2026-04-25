@@ -12,6 +12,7 @@ import {
 import { PnlAnalyticsPage } from './analytics/PnlAnalyticsPage';
 import { OpportunitiesPage } from './opportunities/OpportunitiesPage';
 import { createMenuItems } from './permissions/menu';
+import { StrategiesPage } from './strategies/StrategiesPage';
 import { TasksPage } from './tasks/TasksPage';
 import './styles.css';
 
@@ -82,6 +83,8 @@ function ConsoleApp() {
               <OpportunitiesPage />
             ) : selectedMenu === 'tasks' ? (
               <TasksPage />
+            ) : selectedMenu === 'strategies' ? (
+              <StrategiesPage />
             ) : selectedMenu === 'analytics' ? (
               <PnlAnalyticsPage />
             ) : selectedMenu === 'alerts' ? (

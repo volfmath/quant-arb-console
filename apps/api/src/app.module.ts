@@ -11,6 +11,7 @@ import { PnlModule } from './pnl/pnl.module';
 import { PermissionGuard } from './permissions/permission.guard';
 import { RealtimeModule } from './realtime/realtime.module';
 import { RiskModule } from './risk/risk.module';
+import { StrategiesModule } from './strategies/strategies.module';
 import { TasksModule } from './tasks/tasks.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { TasksModule } from './tasks/tasks.module';
     OpportunitiesModule,
     PnlModule,
     RiskModule,
+    StrategiesModule,
     TasksModule,
   ],
   controllers: [HealthController],

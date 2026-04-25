@@ -173,6 +173,42 @@ export type PnlDetailsResponse = {
   total: number;
 };
 
+export type StrategyRecord = {
+  id: string;
+  name: string;
+  type: 'funding_rate_arb';
+  status: 'draft' | 'running' | 'paused' | 'stopped';
+  symbol: string;
+  min_spread_pct: number;
+  max_position_size: number;
+  leverage: number;
+  running_duration: string;
+  today_pnl: number;
+  total_pnl: number;
+  return_rate: number;
+  win_rate: number;
+  max_drawdown: number;
+  active_tasks: number;
+  total_tasks: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StrategyListResponse = {
+  items: StrategyRecord[];
+  total: number;
+  page: number;
+  size: number;
+};
+
+export type CreateStrategyRequest = {
+  name?: string;
+  symbol?: string;
+  min_spread_pct?: number;
+  max_position_size?: number;
+  leverage?: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -366,6 +402,69 @@ export async function getPnlDetails(token: string): Promise<PnlDetailsResponse> 
   }
 
   return response.json() as Promise<PnlDetailsResponse>;
+}
+
+export async function getStrategies(token: string): Promise<StrategyListResponse> {
+  const response = await fetch(`${API_BASE_URL}/strategies`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Strategy list failed');
+  }
+
+  return response.json() as Promise<StrategyListResponse>;
+}
+
+export async function createStrategy(token: string, body: CreateStrategyRequest): Promise<StrategyRecord> {
+  const response = await fetch(`${API_BASE_URL}/strategies`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error('Strategy create failed');
+  }
+
+  return response.json() as Promise<StrategyRecord>;
+}
+
+export async function updateStrategy(
+  token: string,
+  strategyId: string,
+  body: CreateStrategyRequest,
+): Promise<StrategyRecord> {
+  const response = await fetch(`${API_BASE_URL}/strategies/${strategyId}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error('Strategy update failed');
+  }
+
+  return response.json() as Promise<StrategyRecord>;
+}
+
+export async function toggleStrategy(token: string, strategyId: string): Promise<StrategyRecord> {
+  const response = await fetch(`${API_BASE_URL}/strategies/${strategyId}/toggle`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Strategy toggle failed');
+  }
+
+  return response.json() as Promise<StrategyRecord>;
 }
 
 export async function acknowledgeAlert(token: string, alertId: string): Promise<AlertRecord> {

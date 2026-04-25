@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createTaskFromOpportunity,
+  createStrategy,
   executeTask,
   acknowledgeAlert,
   dismissAlert,
@@ -11,11 +12,14 @@ import {
   getPnlDetails,
   getPnlSummary,
   getPnlTrend,
+  getStrategies,
   getTaskOrders,
   getTaskPositions,
   getAlerts,
   getTasks,
   login,
+  toggleStrategy,
+  updateStrategy,
 } from './client';
 
 afterEach(() => {
@@ -204,6 +208,39 @@ describe('api client', () => {
       3,
       'http://localhost:3000/api/v1/analytics/pnl/details',
       expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+  });
+
+  it('loads and mutates strategies with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, page: 1, size: 0 }),
+    } as Response);
+
+    await getStrategies('abc');
+    await createStrategy('abc', { name: 'strategy', symbol: 'BTC/USDT:USDT' });
+    await updateStrategy('abc', 'strategy-1', { leverage: 4 });
+    await toggleStrategy('abc', 'strategy-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/strategies',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/strategies',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:3000/api/v1/strategies/strategy-1',
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:3000/api/v1/strategies/strategy-1/toggle',
+      expect.objectContaining({ method: 'PUT' }),
     );
   });
 });
