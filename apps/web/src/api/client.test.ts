@@ -15,6 +15,7 @@ import {
   getDashboardRiskSummary,
   getDashboardStrategySummary,
   getOpportunityDetail,
+  getOpportunitySummary,
   getOpportunities,
   getPnlByExchange,
   getPnlByStrategy,
@@ -130,6 +131,22 @@ describe('api client', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3000/api/v1/opportunities/BTC%2FUSDT%3AUSDT%3Abinance%3Aokx',
+      expect.objectContaining({
+        headers: { Authorization: 'Bearer abc' },
+      }),
+    );
+  });
+
+  it('loads opportunity summary with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ total_count: 3 }),
+    } as Response);
+
+    await getOpportunitySummary('abc');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/v1/opportunities/summary',
       expect.objectContaining({
         headers: { Authorization: 'Bearer abc' },
       }),

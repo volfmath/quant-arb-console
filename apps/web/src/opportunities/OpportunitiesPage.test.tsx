@@ -32,6 +32,9 @@ describe('OpportunitiesPage', () => {
           slippage_estimate: 0.2,
         });
       }
+      if (url.endsWith('/opportunities/summary')) {
+        return jsonResponse(opportunitySummary);
+      }
 
       return jsonResponse({ items: [opportunity], total: 1, page: 1, size: 20 });
     });
@@ -42,7 +45,7 @@ describe('OpportunitiesPage', () => {
       </QueryClientProvider>,
     );
 
-    fireEvent.click(await screen.findByText('BTC'));
+    fireEvent.click((await screen.findAllByText('BTC'))[1]!);
 
     expect(await screen.findByLabelText('opportunity detail')).toBeTruthy();
     expect(await screen.findByText('$0.4800')).toBeTruthy();
@@ -93,6 +96,9 @@ describe('OpportunitiesPage', () => {
           slippage_estimate: 0.2,
         });
       }
+      if (url.endsWith('/opportunities/summary')) {
+        return jsonResponse(opportunitySummary);
+      }
 
       return jsonResponse({ items: [opportunity], total: 1, page: 1, size: 20 });
     });
@@ -103,7 +109,7 @@ describe('OpportunitiesPage', () => {
       </QueryClientProvider>,
     );
 
-    fireEvent.click(await screen.findByText('BTC'));
+    fireEvent.click((await screen.findAllByText('BTC'))[1]!);
     const detailPanel = await screen.findByLabelText('opportunity detail');
     fireEvent.click(detailPanel.querySelector('button.ant-btn-primary')!);
     fireEvent.click(await screen.findByRole('button', { name: '创建并执行' }));
@@ -133,6 +139,21 @@ const opportunity = {
   settlement_time: '2026-04-25T16:00:00Z',
   settlement_countdown: '02:00:00',
   discovered_at: '2026-04-25T14:00:00Z',
+};
+
+const opportunitySummary = {
+  best_opportunity: {
+    spread_pct: 0.016,
+    symbol: 'BTC',
+    long_exchange: 'binance',
+    short_exchange: 'okx',
+  },
+  total_count: 1,
+  avg_spread_8h: 0.016,
+  monitored_symbols: 3,
+  monitored_exchanges: 3,
+  next_settlement: '2026-04-25T16:00:00Z',
+  next_settlement_countdown: '02:00:00',
 };
 
 function jsonResponse(body: unknown): Promise<Response> {

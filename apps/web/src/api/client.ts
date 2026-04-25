@@ -40,6 +40,21 @@ export type OpportunityListResponse = {
   size: number;
 };
 
+export type OpportunitySummary = {
+  best_opportunity: {
+    spread_pct: number;
+    symbol: string;
+    long_exchange: string;
+    short_exchange: string;
+  } | null;
+  total_count: number;
+  avg_spread_8h: number;
+  monitored_symbols: number;
+  monitored_exchanges: number;
+  next_settlement: string | null;
+  next_settlement_countdown: string | null;
+};
+
 export type OpportunityQueryParams = {
   symbol?: string;
   minScore?: number;
@@ -363,6 +378,20 @@ export async function getOpportunities(
   }
 
   return response.json() as Promise<OpportunityListResponse>;
+}
+
+export async function getOpportunitySummary(token: string): Promise<OpportunitySummary> {
+  const response = await fetch(`${API_BASE_URL}/opportunities/summary`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Opportunity summary failed');
+  }
+
+  return response.json() as Promise<OpportunitySummary>;
 }
 
 export async function scanOpportunities(

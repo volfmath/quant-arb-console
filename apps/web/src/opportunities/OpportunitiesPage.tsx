@@ -7,6 +7,7 @@ import {
   createTaskFromOpportunity,
   executeTask,
   getOpportunityDetail,
+  getOpportunitySummary,
   getOpportunities,
   type Opportunity,
   type OpportunityDetail,
@@ -39,6 +40,11 @@ export function OpportunitiesPage() {
   const query = useQuery({
     queryKey: ['opportunities', filters],
     queryFn: () => getOpportunities(token ?? '', filters),
+    enabled: Boolean(token),
+  });
+  const summaryQuery = useQuery({
+    queryKey: ['opportunities', 'summary'],
+    queryFn: () => getOpportunitySummary(token ?? ''),
     enabled: Boolean(token),
   });
   const detailQuery = useQuery({
@@ -203,8 +209,12 @@ export function OpportunitiesPage() {
       </section>
 
       <section className="kpi-grid compact" aria-label="opportunity summary">
-        <KpiMini title="机会数" value={String(query.data?.total ?? 0)} />
-        <KpiMini title="监控模式" value="mock" />
+        <KpiMini title="机会数" value={String(summaryQuery.data?.total_count ?? query.data?.total ?? 0)} />
+        <KpiMini title="最佳机会" value={summaryQuery.data?.best_opportunity?.symbol ?? '-'} />
+        <KpiMini title="平均费率差" value={`${(summaryQuery.data?.avg_spread_8h ?? 0).toFixed(4)}%`} />
+        <KpiMini title="监控币种" value={String(summaryQuery.data?.monitored_symbols ?? 0)} />
+        <KpiMini title="交易所" value={String(summaryQuery.data?.monitored_exchanges ?? 0)} />
+        <KpiMini title="结算倒计时" value={summaryQuery.data?.next_settlement_countdown ?? '-'} />
         <KpiMini title="刷新" value={query.isFetching ? 'loading' : 'ready'} />
       </section>
 
