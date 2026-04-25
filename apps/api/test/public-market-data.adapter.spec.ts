@@ -8,23 +8,28 @@ afterEach(() => {
 });
 
 describe('PublicMarketDataAdapter', () => {
-  it('maps public funding-rate responses from Binance, Bybit, and OKX', async () => {
+  it('maps public funding-rate responses from Binance, OKX, and Gate', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => jsonResponse(responseFor(String(input))));
     const adapter = new PublicMarketDataAdapter();
 
     const rates = await adapter.getFundingRates(['BTC/USDT:USDT']);
 
     expect(rates).toHaveLength(3);
-    expect(rates.map((rate) => rate.exchange)).toEqual(['binance', 'bybit', 'okx']);
+    expect(rates.map((rate) => rate.exchange)).toEqual(['binance', 'okx', 'gate']);
     expect(rates[0]).toMatchObject({
       unifiedSymbol: 'BTC/USDT:USDT',
       fundingRate: 0.0001,
       markPrice: 60001,
     });
-    expect(rates[2]).toMatchObject({
+    expect(rates[1]).toMatchObject({
       exchange: 'okx',
       fundingRate: 0.00012,
       markPrice: 60003,
+    });
+    expect(rates[2]).toMatchObject({
+      exchange: 'gate',
+      fundingRate: 0.00013,
+      markPrice: 60004,
     });
   });
 
@@ -33,12 +38,12 @@ describe('PublicMarketDataAdapter', () => {
     const adapter = new PublicMarketDataAdapter();
 
     const binanceTicker = await adapter.getTicker('BTC/USDT:USDT', 'binance');
-    const bybitTicker = await adapter.getTicker('BTC/USDT:USDT', 'bybit');
     const okxTicker = await adapter.getTicker('BTC/USDT:USDT', 'okx');
+    const gateTicker = await adapter.getTicker('BTC/USDT:USDT', 'gate');
 
     expect(binanceTicker).toMatchObject({ bestBid: 60000, bestAsk: 60002, bidSize: 3 });
-    expect(bybitTicker).toMatchObject({ bestBid: 60010, bestAsk: 60012, bidSize: 4 });
     expect(okxTicker).toMatchObject({ bestBid: 60020, bestAsk: 60022, bidSize: 5 });
+    expect(gateTicker).toMatchObject({ bestBid: 60030, bestAsk: 60032, bidSize: 6 });
   });
 
   it('does not place authenticated orders through the public adapter', async () => {
@@ -77,26 +82,6 @@ function responseFor(url: string): unknown {
       time: 1777118400000,
     };
   }
-  if (url.includes('api.bybit.com/v5/market/tickers')) {
-    return {
-      retCode: 0,
-      result: {
-        list: [
-          {
-            lastPrice: '60011',
-            markPrice: '60011',
-            fundingRate: '0.00011',
-            nextFundingTime: '1777125600000',
-            bid1Price: '60010',
-            bid1Size: '4',
-            ask1Price: '60012',
-            ask1Size: '2.5',
-            ts: '1777118400000',
-          },
-        ],
-      },
-    };
-  }
   if (url.includes('www.okx.com/api/v5/public/funding-rate')) {
     return {
       code: '0',
@@ -117,6 +102,26 @@ function responseFor(url: string): unknown {
         },
       ],
     };
+  }
+  if (url.includes('api.gateio.ws/api/v4/futures/usdt/contracts/BTC_USDT')) {
+    return {
+      funding_rate: '0.00013',
+      funding_next_apply: 1777125600,
+      mark_price: '60004',
+    };
+  }
+  if (url.includes('api.gateio.ws/api/v4/futures/usdt/tickers')) {
+    return [
+      {
+        last: '60004',
+        funding_rate: '0.00013',
+        mark_price: '60004',
+        highest_bid: '60030',
+        highest_size: '6',
+        lowest_ask: '60032',
+        lowest_size: '2.9',
+      },
+    ];
   }
 
   throw new Error(`Unhandled URL: ${url}`);

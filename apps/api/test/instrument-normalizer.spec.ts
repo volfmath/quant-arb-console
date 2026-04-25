@@ -16,5 +16,6 @@ describe('instrument normalizer', () => {
     expect(toExchangeSymbol('BTC/USDT:USDT', 'binance')).toBe('BTCUSDT');
     expect(toExchangeSymbol('BTC/USDT:USDT', 'bybit')).toBe('BTCUSDT');
     expect(toExchangeSymbol('BTC/USDT:USDT', 'okx')).toBe('BTC-USDT-SWAP');
+    expect(toExchangeSymbol('BTC/USDT:USDT', 'gate')).toBe('BTC_USDT');
   });
 });

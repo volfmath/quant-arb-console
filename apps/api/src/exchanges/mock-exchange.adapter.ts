@@ -9,7 +9,7 @@ import type {
   TickerSnapshot,
 } from './exchange-adapter.interface';
 
-const supportedExchanges: ExchangeCode[] = ['binance', 'bybit', 'okx'];
+const supportedExchanges: ExchangeCode[] = ['binance', 'okx', 'gate'];
 
 @Injectable()
 export class MockExchangeAdapter implements ExchangeAdapter {
@@ -63,4 +63,3 @@ export class MockExchangeAdapter implements ExchangeAdapter {
 function roundRate(value: number): number {
   return Number(value.toFixed(8));
 }
-

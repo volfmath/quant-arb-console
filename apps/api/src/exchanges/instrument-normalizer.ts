@@ -40,6 +40,9 @@ export function toExchangeSymbol(unifiedSymbol: string, exchange: ExchangeCode):
   if (exchange === 'okx') {
     return `${instrument.base}-${instrument.quote}-SWAP`;
   }
+  if (exchange === 'gate') {
+    return `${instrument.base}_${instrument.quote}`;
+  }
 
   return `${instrument.base}${instrument.quote}`;
 }

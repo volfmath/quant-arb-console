@@ -122,7 +122,7 @@ describe('Core API flow', () => {
     const auditLogs = await get('/audit-logs');
 
     expect(toggledRule.enabled).toBe(false);
-    expect(riskAccounts.total).toBe(2);
+    expect(riskAccounts.total).toBe(3);
     expect(circuitBreak.enabled).toBe(true);
     expect(riskOverview.risk_level).toBe('critical');
     expect(alerts.items[0]).toMatchObject({ source: 'risk_engine', severity: 'critical' });

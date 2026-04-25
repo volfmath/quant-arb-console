@@ -63,7 +63,7 @@ describe('RiskService', () => {
       circuit_breaker_enabled: true,
       circuit_breaker_reason: 'operator test',
     });
-    expect(service.accounts().total).toBe(2);
+    expect(service.accounts().total).toBe(3);
     expect(circuitBreak.enabled).toBe(true);
     expect(audit.list()[0]?.action).toBe('risk:circuit_break');
   });

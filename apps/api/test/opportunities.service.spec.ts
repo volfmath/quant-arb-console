@@ -13,7 +13,7 @@ describe('OpportunitiesService', () => {
     expect(result.items[0]).toMatchObject({
       unified_symbol: 'BTC/USDT:USDT',
       long_exchange: 'binance',
-      short_exchange: 'okx',
+      short_exchange: 'gate',
       feasibility_score: 64,
     });
   });
@@ -26,7 +26,7 @@ describe('OpportunitiesService', () => {
 
     expect(filtered.items).toHaveLength(0);
     expect(summary.total_count).toBe(3);
-    expect(summary.best_opportunity?.long_exchange).toBe('binance');
+    expect(summary.best_opportunity).toMatchObject({ long_exchange: 'binance', short_exchange: 'gate' });
   });
 
   it('normalizes symbols, filters by spread, sorts, and paginates', async () => {

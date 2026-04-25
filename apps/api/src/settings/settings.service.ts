@@ -87,6 +87,14 @@ export class SettingsService {
       is_testnet: true,
       created_at: new Date().toISOString(),
     },
+    {
+      id: 'exchange-gate',
+      name: 'Gate Mock',
+      code: 'gate',
+      status: 'active',
+      is_testnet: true,
+      created_at: new Date().toISOString(),
+    },
   ];
 
   private readonly accounts: StoredAccountRecord[] = [
@@ -94,6 +102,24 @@ export class SettingsService {
       id: 'account-binance-mock',
       exchange_code: 'binance',
       name: 'binance-mock-account',
+      status: 'active',
+      is_testnet: true,
+      credentials_configured: false,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 'account-okx-mock',
+      exchange_code: 'okx',
+      name: 'okx-mock-account',
+      status: 'active',
+      is_testnet: true,
+      credentials_configured: false,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 'account-gate-mock',
+      exchange_code: 'gate',
+      name: 'gate-mock-account',
       status: 'active',
       is_testnet: true,
       credentials_configured: false,

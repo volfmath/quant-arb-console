@@ -11,7 +11,7 @@ describe('SettingsService', () => {
     const account = service.createAccount({ exchange_code: exchange.code, name: 'bybit-test-account' });
     const deleted = service.deleteAccount(account.id);
 
-    expect(service.listExchanges().total).toBe(3);
+    expect(service.listExchanges().total).toBe(4);
     expect(account.is_testnet).toBe(true);
     expect(account.credentials_configured).toBe(false);
     expect(deleted.status).toBe('deleted');

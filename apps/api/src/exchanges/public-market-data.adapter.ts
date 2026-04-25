@@ -10,7 +10,7 @@ import type {
 } from './exchange-adapter.interface';
 import { toExchangeSymbol } from './instrument-normalizer';
 
-const publicExchanges: ExchangeCode[] = ['binance', 'bybit', 'okx'];
+const publicExchanges: ExchangeCode[] = ['binance', 'okx', 'gate'];
 
 @Injectable()
 export class PublicMarketDataAdapter implements ExchangeAdapter {
@@ -26,11 +26,11 @@ export class PublicMarketDataAdapter implements ExchangeAdapter {
     if (exchange === 'binance') {
       return this.getBinanceTicker(unifiedSymbol);
     }
-    if (exchange === 'bybit') {
-      return this.getBybitTicker(unifiedSymbol);
-    }
     if (exchange === 'okx') {
       return this.getOkxTicker(unifiedSymbol);
+    }
+    if (exchange === 'gate') {
+      return this.getGateTicker(unifiedSymbol);
     }
 
     throw new Error(`Unsupported public market data exchange: ${exchange}`);
@@ -49,11 +49,11 @@ export class PublicMarketDataAdapter implements ExchangeAdapter {
     if (exchange === 'binance') {
       return this.getBinanceFundingRate(unifiedSymbol);
     }
-    if (exchange === 'bybit') {
-      return this.getBybitFundingRate(unifiedSymbol);
-    }
     if (exchange === 'okx') {
       return this.getOkxFundingRate(unifiedSymbol);
+    }
+    if (exchange === 'gate') {
+      return this.getGateFundingRate(unifiedSymbol);
     }
 
     throw new Error(`Unsupported public funding exchange: ${exchange}`);
@@ -71,20 +71,6 @@ export class PublicMarketDataAdapter implements ExchangeAdapter {
       unifiedSymbol,
       fundingRate: parseNumber(body.lastFundingRate),
       markPrice: parseNumber(body.markPrice),
-      settlementTime,
-      nextSettlement: settlementTime,
-    };
-  }
-
-  private async getBybitFundingRate(unifiedSymbol: string): Promise<FundingRateSnapshot> {
-    const ticker = await this.getBybitTickerBody(unifiedSymbol);
-    const settlementTime = timestampToIso(ticker.nextFundingTime);
-
-    return {
-      exchange: 'bybit',
-      unifiedSymbol,
-      fundingRate: parseNumber(ticker.fundingRate),
-      markPrice: parseNumber(ticker.markPrice || ticker.lastPrice),
       settlementTime,
       nextSettlement: settlementTime,
     };
@@ -110,6 +96,23 @@ export class PublicMarketDataAdapter implements ExchangeAdapter {
     };
   }
 
+  private async getGateFundingRate(unifiedSymbol: string): Promise<FundingRateSnapshot> {
+    const contract = toExchangeSymbol(unifiedSymbol, 'gate');
+    const body = await fetchJson<GateContract>(
+      `https://api.gateio.ws/api/v4/futures/usdt/contracts/${encodeURIComponent(contract)}`,
+    );
+    const settlementTime = timestampToIsoSeconds(body.funding_next_apply);
+
+    return {
+      exchange: 'gate',
+      unifiedSymbol,
+      fundingRate: parseNumber(body.funding_rate),
+      markPrice: parseNumber(body.mark_price),
+      settlementTime,
+      nextSettlement: settlementTime,
+    };
+  }
+
   private async getBinanceTicker(unifiedSymbol: string): Promise<TickerSnapshot> {
     const symbol = toExchangeSymbol(unifiedSymbol, 'binance');
     const [premium, book] = await Promise.all([
@@ -129,21 +132,6 @@ export class PublicMarketDataAdapter implements ExchangeAdapter {
     };
   }
 
-  private async getBybitTicker(unifiedSymbol: string): Promise<TickerSnapshot> {
-    const ticker = await this.getBybitTickerBody(unifiedSymbol);
-
-    return {
-      exchange: 'bybit',
-      unifiedSymbol,
-      markPrice: parseNumber(ticker.markPrice || ticker.lastPrice),
-      bestBid: parseNumber(ticker.bid1Price),
-      bestAsk: parseNumber(ticker.ask1Price),
-      bidSize: parseNumber(ticker.bid1Size),
-      askSize: parseNumber(ticker.ask1Size),
-      capturedAt: timestampToIso(ticker.ts ?? Date.now()),
-    };
-  }
-
   private async getOkxTicker(unifiedSymbol: string): Promise<TickerSnapshot> {
     const ticker = await this.getOkxTickerBody(unifiedSymbol);
 
@@ -159,19 +147,6 @@ export class PublicMarketDataAdapter implements ExchangeAdapter {
     };
   }
 
-  private async getBybitTickerBody(unifiedSymbol: string): Promise<BybitTicker> {
-    const symbol = toExchangeSymbol(unifiedSymbol, 'bybit');
-    const body = await fetchJson<BybitResponse<BybitTicker>>(
-      `https://api.bybit.com/v5/market/tickers?category=linear&symbol=${encodeURIComponent(symbol)}`,
-    );
-    const item = body.result?.list?.[0];
-    if (!item || body.retCode !== 0) {
-      throw new Error(`Bybit ticker not found: ${symbol}`);
-    }
-
-    return item;
-  }
-
   private async getOkxTickerBody(unifiedSymbol: string): Promise<OkxTicker> {
     const symbol = toExchangeSymbol(unifiedSymbol, 'okx');
     const body = await fetchJson<OkxResponse<OkxTicker>>(
@@ -179,6 +154,28 @@ export class PublicMarketDataAdapter implements ExchangeAdapter {
     );
 
     return firstOkxData(body, `OKX ticker not found: ${symbol}`);
+  }
+
+  private async getGateTicker(unifiedSymbol: string): Promise<TickerSnapshot> {
+    const contract = toExchangeSymbol(unifiedSymbol, 'gate');
+    const body = await fetchJson<GateTicker[]>(
+      `https://api.gateio.ws/api/v4/futures/usdt/tickers?contract=${encodeURIComponent(contract)}`,
+    );
+    const ticker = body[0];
+    if (!ticker) {
+      throw new Error(`Gate ticker not found: ${contract}`);
+    }
+
+    return {
+      exchange: 'gate',
+      unifiedSymbol,
+      markPrice: parseNumber(ticker.mark_price || ticker.last),
+      bestBid: parseNumber(ticker.highest_bid),
+      bestAsk: parseNumber(ticker.lowest_ask),
+      bidSize: parseNumber(ticker.highest_size),
+      askSize: parseNumber(ticker.lowest_size),
+      capturedAt: new Date().toISOString(),
+    };
   }
 }
 
@@ -195,25 +192,6 @@ type BinanceBookTicker = {
   askPrice: string;
   askQty: string;
   time?: number;
-};
-
-type BybitResponse<T> = {
-  retCode: number;
-  result?: {
-    list?: T[];
-  };
-};
-
-type BybitTicker = {
-  lastPrice: string;
-  markPrice?: string;
-  fundingRate: string;
-  nextFundingTime: string;
-  bid1Price: string;
-  bid1Size: string;
-  ask1Price: string;
-  ask1Size: string;
-  ts?: string;
 };
 
 type OkxResponse<T> = {
@@ -234,6 +212,22 @@ type OkxTicker = {
   askPx: string;
   askSz: string;
   ts: string;
+};
+
+type GateContract = {
+  funding_rate: string;
+  funding_next_apply: number;
+  mark_price: string;
+};
+
+type GateTicker = {
+  last: string;
+  funding_rate: string;
+  mark_price: string;
+  highest_bid: string;
+  highest_size: string;
+  lowest_ask: string;
+  lowest_size: string;
 };
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -276,4 +270,13 @@ function timestampToIso(value: string | number | undefined): string {
   }
 
   return new Date(parsed).toISOString();
+}
+
+function timestampToIsoSeconds(value: string | number | undefined): string {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return new Date().toISOString();
+  }
+
+  return new Date(parsed * 1000).toISOString();
 }

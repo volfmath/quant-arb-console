@@ -155,6 +155,14 @@ export class RiskService {
         leverage: 0,
         open_positions: 0,
       },
+      {
+        account_id: 'gate-mock-account',
+        exchange: 'gate',
+        risk_level: 'low',
+        margin_usage_pct: 0,
+        leverage: 0,
+        open_positions: 0,
+      },
     ];
     return { items, total: items.length, page: 1, size: items.length };
   }
