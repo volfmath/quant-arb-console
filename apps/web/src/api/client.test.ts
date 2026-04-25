@@ -14,6 +14,7 @@ import {
   getDashboardAssetSummary,
   getDashboardRiskSummary,
   getDashboardStrategySummary,
+  getOpportunityAudit,
   getOpportunityDetail,
   getOpportunitySummary,
   getOpportunities,
@@ -116,6 +117,22 @@ describe('api client', () => {
       'http://localhost:3000/api/v1/opportunities/scan?symbol=ETHUSDT&page=1&size=1',
       expect.objectContaining({
         method: 'POST',
+        headers: { Authorization: 'Bearer abc' },
+      }),
+    );
+  });
+
+  it('loads opportunity scan audit records', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, page: 2, size: 5 }),
+    } as Response);
+
+    await getOpportunityAudit('abc', 2, 5);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/v1/opportunities/audit?page=2&size=5',
+      expect.objectContaining({
         headers: { Authorization: 'Bearer abc' },
       }),
     );

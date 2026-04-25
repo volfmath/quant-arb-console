@@ -84,6 +84,72 @@ describe('OpportunitiesService', () => {
     );
   });
 
+  it('records scan audit entries with exchange coverage', async () => {
+    const service = new OpportunitiesService(new MockExchangeAdapter());
+
+    await service.list({ symbols: ['BTC', 'ETH'] });
+    await service.scanAndPublish({ symbols: ['SOL'] });
+    const audit = await service.auditLog({ page: 1, size: 10 });
+
+    expect(audit.total).toBe(2);
+    expect(audit.items[0]).toMatchObject({
+      source: 'manual_scan',
+      monitored_symbols: 1,
+      funding_snapshots: 3,
+      data_sources: ['binance', 'gate', 'okx'],
+      comparable_symbols: 1,
+      opportunity_count: 1,
+      best_opportunity: {
+        symbol: 'SOL',
+        long_exchange: 'binance',
+        short_exchange: 'gate',
+      },
+    });
+    expect(audit.items[0]!.symbols[0]).toMatchObject({
+      unified_symbol: 'SOL/USDT:USDT',
+      exchanges: ['binance', 'gate', 'okx'],
+      comparable: true,
+    });
+    expect(audit.items[1]).toMatchObject({
+      source: 'list',
+      monitored_symbols: 2,
+    });
+  });
+
+  it('marks audit symbols as not comparable when fewer than two exchanges return data', async () => {
+    const adapter: ExchangeAdapter = {
+      getFundingRates: async (): Promise<FundingRateSnapshot[]> => [
+        {
+          exchange: 'gate',
+          unifiedSymbol: 'BTC/USDT:USDT',
+          fundingRate: 0.0001,
+          markPrice: 60000,
+          settlementTime: new Date().toISOString(),
+          nextSettlement: new Date().toISOString(),
+        },
+      ],
+      getTicker: vi.fn(),
+      placeOrder: vi.fn(),
+    };
+    const service = new OpportunitiesService(adapter);
+
+    await service.list({ symbols: ['BTC'] });
+    const audit = await service.auditLog();
+
+    expect(audit.items[0]).toMatchObject({
+      funding_snapshots: 1,
+      data_sources: ['gate'],
+      comparable_symbols: 0,
+      opportunity_count: 0,
+      best_opportunity: null,
+    });
+    expect(audit.items[0]!.symbols[0]).toMatchObject({
+      unified_symbol: 'BTC/USDT:USDT',
+      exchanges: ['gate'],
+      comparable: false,
+    });
+  });
+
   it('does not build opportunities when only one exchange has a symbol snapshot', async () => {
     const adapter: ExchangeAdapter = {
       getFundingRates: async (): Promise<FundingRateSnapshot[]> => [

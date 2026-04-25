@@ -13,6 +13,11 @@ type OpportunityQuery = {
   size?: string;
 };
 
+type AuditQuery = {
+  page?: string;
+  size?: string;
+};
+
 @Controller('opportunities')
 @UseGuards(JwtAuthGuard)
 @RequirePermission('opportunity:view')
@@ -32,6 +37,14 @@ export class OpportunitiesController {
   @Post('scan')
   async scan(@Query() query: OpportunityQuery) {
     return this.opportunitiesService.scanAndPublish(buildListOptions(query));
+  }
+
+  @Get('audit')
+  async audit(@Query() query: AuditQuery) {
+    return this.opportunitiesService.auditLog({
+      page: parseNumber(query.page),
+      size: parseNumber(query.size),
+    });
   }
 
   @Get(':id')

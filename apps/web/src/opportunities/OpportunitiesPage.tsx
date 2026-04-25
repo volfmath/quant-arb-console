@@ -6,12 +6,14 @@ import { useState } from 'react';
 import {
   createTaskFromOpportunity,
   executeTask,
+  getOpportunityAudit,
   getOpportunityDetail,
   getOpportunitySummary,
   getOpportunities,
   type Opportunity,
   type OpportunityDetail,
   type OpportunityQueryParams,
+  type OpportunityScanAudit,
   scanOpportunities,
 } from '../api/client';
 import { useAuthStore } from '../auth/auth-store';
@@ -45,6 +47,11 @@ export function OpportunitiesPage() {
   const summaryQuery = useQuery({
     queryKey: ['opportunities', 'summary'],
     queryFn: () => getOpportunitySummary(token ?? ''),
+    enabled: Boolean(token),
+  });
+  const auditQuery = useQuery({
+    queryKey: ['opportunities', 'audit'],
+    queryFn: () => getOpportunityAudit(token ?? ''),
     enabled: Boolean(token),
   });
   const detailQuery = useQuery({
@@ -135,6 +142,55 @@ export function OpportunitiesPage() {
           </Button>
         </Space>
       ),
+    },
+  ];
+
+  const auditColumns: ColumnsType<OpportunityScanAudit> = [
+    {
+      title: 'æ—¶é—´',
+      dataIndex: 'scanned_at',
+      key: 'scanned_at',
+      render: (value: string) => new Date(value).toLocaleString(),
+    },
+    {
+      title: 'æ¥æº',
+      dataIndex: 'source',
+      key: 'source',
+      render: (value: OpportunityScanAudit['source']) => (
+        <Tag color={value === 'manual_scan' ? 'blue' : 'default'}>{value}</Tag>
+      ),
+    },
+    { title: 'ç›‘æŽ§å¸ç§', dataIndex: 'monitored_symbols', key: 'monitored_symbols' },
+    { title: 'å¯æ¯”è¾ƒå¸ç§', dataIndex: 'comparable_symbols', key: 'comparable_symbols' },
+    { title: 'è¡Œæƒ…å¿«ç…§', dataIndex: 'funding_snapshots', key: 'funding_snapshots' },
+    {
+      title: 'æ•°æ®æº',
+      dataIndex: 'data_sources',
+      key: 'data_sources',
+      render: (sources: string[]) => (
+        <Space size={[4, 4]} wrap>
+          {sources.map((source) => (
+            <Tag key={source}>{source}</Tag>
+          ))}
+        </Space>
+      ),
+    },
+    { title: 'æœºä¼šæ•°', dataIndex: 'opportunity_count', key: 'opportunity_count' },
+    {
+      title: 'æœ€ä½³æœºä¼š',
+      dataIndex: 'best_opportunity',
+      key: 'best_opportunity',
+      render: (value: OpportunityScanAudit['best_opportunity']) =>
+        value ? `${value.symbol}: ${value.long_exchange} long / ${value.short_exchange} short` : '-',
+    },
+    {
+      title: 'å¸ç§è¦†ç›–',
+      dataIndex: 'symbols',
+      key: 'symbols',
+      render: (symbols: OpportunityScanAudit['symbols']) => {
+        const comparable = symbols.filter((symbol) => symbol.comparable).length;
+        return `${comparable}/${symbols.length}`;
+      },
     },
   ];
 
@@ -264,6 +320,21 @@ export function OpportunitiesPage() {
             label: '价差套利',
             disabled: true,
             children: null,
+          },
+          {
+            key: 'audit',
+            label: 'æ‰«æå®¡è®¡',
+            children: (
+              <Table<OpportunityScanAudit>
+                rowKey="id"
+                className="data-table"
+                loading={auditQuery.isLoading}
+                columns={auditColumns}
+                dataSource={auditQuery.data?.items ?? []}
+                pagination={false}
+                size="middle"
+              />
+            ),
           },
         ]}
       />

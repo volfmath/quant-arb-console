@@ -35,6 +35,9 @@ describe('OpportunitiesPage', () => {
       if (url.endsWith('/opportunities/summary')) {
         return jsonResponse(opportunitySummary);
       }
+      if (url.includes('/opportunities/audit')) {
+        return jsonResponse(opportunityAudit);
+      }
 
       return jsonResponse({ items: [opportunity], total: 1, page: 1, size: 20 });
     });
@@ -99,6 +102,9 @@ describe('OpportunitiesPage', () => {
       if (url.endsWith('/opportunities/summary')) {
         return jsonResponse(opportunitySummary);
       }
+      if (url.includes('/opportunities/audit')) {
+        return jsonResponse(opportunityAudit);
+      }
 
       return jsonResponse({ items: [opportunity], total: 1, page: 1, size: 20 });
     });
@@ -120,6 +126,43 @@ describe('OpportunitiesPage', () => {
         expect.objectContaining({ method: 'POST' }),
       );
     });
+  });
+
+  it('shows scan audit records with exchange coverage', async () => {
+    useAuthStore.getState().setSession({
+      token: 'token',
+      expires_in: 86400,
+      user: {
+        id: 'user-1',
+        username: 'admin',
+        role: 'super_admin',
+        permissions: ['opportunity:view'],
+      },
+    });
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/opportunities/summary')) {
+        return jsonResponse(opportunitySummary);
+      }
+      if (url.includes('/opportunities/audit')) {
+        return jsonResponse(opportunityAudit);
+      }
+
+      return jsonResponse({ items: [opportunity], total: 1, page: 1, size: 20 });
+    });
+
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <OpportunitiesPage />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByText('æ‰«æå®¡è®¡'));
+
+    expect(await screen.findByText('manual_scan')).toBeTruthy();
+    expect((await screen.findAllByText('binance')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('gate').length).toBeGreaterThan(0);
+    expect(screen.getByText('BTC: binance long / okx short')).toBeTruthy();
   });
 });
 
@@ -154,6 +197,39 @@ const opportunitySummary = {
   monitored_exchanges: 3,
   next_settlement: '2026-04-25T16:00:00Z',
   next_settlement_countdown: '02:00:00',
+};
+
+const opportunityAudit = {
+  items: [
+    {
+      id: 'audit-1',
+      source: 'manual_scan',
+      scanned_at: '2026-04-25T14:01:00Z',
+      requested_symbols: ['BTC/USDT:USDT'],
+      monitored_symbols: 1,
+      funding_snapshots: 3,
+      data_sources: ['binance', 'gate', 'okx'],
+      comparable_symbols: 1,
+      opportunity_count: 1,
+      best_opportunity: {
+        symbol: 'BTC',
+        long_exchange: 'binance',
+        short_exchange: 'okx',
+        spread_8h_pct: 0.016,
+      },
+      symbols: [
+        {
+          unified_symbol: 'BTC/USDT:USDT',
+          exchanges: ['binance', 'gate', 'okx'],
+          rates: 3,
+          comparable: true,
+        },
+      ],
+    },
+  ],
+  total: 1,
+  page: 1,
+  size: 20,
 };
 
 function jsonResponse(body: unknown): Promise<Response> {

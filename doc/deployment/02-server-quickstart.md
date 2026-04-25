@@ -112,7 +112,10 @@ Then verify this flow:
 2. Open Arbitrage Opportunities.
 3. Click refresh or scan.
 4. Confirm opportunities show Binance, OKX, or Gate pairs.
-5. Open Settings and confirm exchange mode is `testnet`.
+5. Open the Scan Audit tab.
+6. Confirm `data_sources` includes at least two of Binance, OKX, and Gate.
+7. Confirm `comparable_symbols` is greater than zero.
+8. Open Settings and confirm exchange mode is `testnet`.
 
 If opportunities are empty, first check network access:
 
@@ -135,8 +138,22 @@ Recommended first run:
 1. Keep `EXCHANGE_MODE=testnet`.
 2. Keep `ENABLE_LIVE_TRADING=false`.
 3. Use the Opportunities page to observe real funding-rate differences.
-4. Use Create Task only as a mock execution demo.
-5. Do not treat estimated PnL as realized profit; it is based on funding-rate spread and a reference position size.
+4. Use the Scan Audit tab to verify every scan has enough exchange coverage.
+5. Use Create Task only as a mock execution demo.
+6. Do not treat estimated PnL as realized profit; it is based on funding-rate spread and a reference position size.
+
+Before any small-capital manual test, collect at least one day of scan audit history:
+
+```text
+minimum scans: 100
+minimum data sources per useful scan: 2
+comparable_symbols: greater than 0
+opportunity_count: greater than 0 for candidate scans
+single-exchange opportunities: 0
+live trading flag: false
+```
+
+Only move to manual small-capital validation when the audit records show stable market-data coverage and correct long/short direction.
 
 Account API keys:
 

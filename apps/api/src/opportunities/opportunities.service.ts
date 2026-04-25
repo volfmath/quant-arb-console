@@ -26,6 +26,32 @@ export type Opportunity = {
   discovered_at: string;
 };
 
+export type OpportunityScanAuditSymbol = {
+  unified_symbol: string;
+  exchanges: string[];
+  rates: number;
+  comparable: boolean;
+};
+
+export type OpportunityScanAudit = {
+  id: string;
+  source: 'list' | 'manual_scan';
+  scanned_at: string;
+  requested_symbols: string[];
+  monitored_symbols: number;
+  funding_snapshots: number;
+  data_sources: string[];
+  comparable_symbols: number;
+  opportunity_count: number;
+  best_opportunity: {
+    symbol: string;
+    long_exchange: string;
+    short_exchange: string;
+    spread_8h_pct: number;
+  } | null;
+  symbols: OpportunityScanAuditSymbol[];
+};
+
 export type ListOptions = {
   symbols?: string[];
   minScore?: number;
@@ -37,9 +63,12 @@ export type ListOptions = {
 };
 
 const referencePositionSize = 1000;
+const maxAuditRecords = 200;
 
 @Injectable()
 export class OpportunitiesService {
+  private readonly auditRecords: OpportunityScanAudit[] = [];
+
   constructor(
     @Inject(EXCHANGE_ADAPTER) private readonly exchangeAdapter: ExchangeAdapter,
     @Optional()
@@ -48,6 +77,24 @@ export class OpportunitiesService {
   ) {}
 
   async list(options: ListOptions = {}) {
+    return this.scan(options, 'list');
+  }
+
+  async auditLog(options: { page?: number; size?: number } = {}) {
+    const page = positiveInteger(options.page, 1);
+    const size = positiveInteger(options.size, 20);
+    const start = (page - 1) * size;
+    const items = this.auditRecords.slice(start, start + size);
+
+    return {
+      items,
+      total: this.auditRecords.length,
+      page,
+      size,
+    };
+  }
+
+  private async scan(options: ListOptions = {}, auditSource?: OpportunityScanAudit['source']) {
     const monitoredSymbols = getMonitoredSymbols();
     const symbols = normalizeSymbols(options.symbols?.length ? options.symbols : monitoredSymbols);
     const rates = await this.exchangeAdapter.getFundingRates(symbols);
@@ -66,16 +113,22 @@ export class OpportunitiesService {
     const start = (page - 1) * size;
     const pageItems = items.slice(start, start + size);
 
-    return {
+    const result = {
       items: pageItems,
       total: items.length,
       page,
       size,
     };
+
+    if (auditSource) {
+      this.recordAudit(auditSource, symbols, rates, items);
+    }
+
+    return result;
   }
 
   async summary() {
-    const result = await this.list();
+    const result = await this.scan();
     const best = result.items[0];
 
     return {
@@ -97,7 +150,7 @@ export class OpportunitiesService {
   }
 
   async detail(id: string) {
-    const result = await this.list();
+    const result = await this.scan();
     const item = result.items.find((opportunity) => opportunity.id === id);
     if (!item) {
       throw new NotFoundException('Opportunity not found');
@@ -113,7 +166,7 @@ export class OpportunitiesService {
   }
 
   async scanAndPublish(options: ListOptions = {}) {
-    const result = await this.list(options);
+    const result = await this.scan(options, 'manual_scan');
     this.realtimeGateway?.publish('opportunities', 'opportunity:update', {
       items: result.items,
       total: result.total,
@@ -121,6 +174,52 @@ export class OpportunitiesService {
 
     return result;
   }
+
+  private recordAudit(
+    source: OpportunityScanAudit['source'],
+    requestedSymbols: string[],
+    rates: FundingRateSnapshot[],
+    opportunities: Opportunity[],
+  ): void {
+    const symbols = buildAuditSymbols(requestedSymbols, rates);
+    const record: OpportunityScanAudit = {
+      id: crypto.randomUUID(),
+      source,
+      scanned_at: new Date().toISOString(),
+      requested_symbols: requestedSymbols,
+      monitored_symbols: requestedSymbols.length,
+      funding_snapshots: rates.length,
+      data_sources: [...new Set(rates.map((rate) => rate.exchange))].sort(),
+      comparable_symbols: symbols.filter((symbol) => symbol.comparable).length,
+      opportunity_count: opportunities.length,
+      best_opportunity: opportunities[0]
+        ? {
+            symbol: opportunities[0].symbol_display,
+            long_exchange: opportunities[0].long_exchange,
+            short_exchange: opportunities[0].short_exchange,
+            spread_8h_pct: opportunities[0].spread_8h_pct,
+          }
+        : null,
+      symbols,
+    };
+
+    this.auditRecords.unshift(record);
+    this.auditRecords.splice(maxAuditRecords);
+  }
+}
+
+function buildAuditSymbols(requestedSymbols: string[], rates: FundingRateSnapshot[]): OpportunityScanAuditSymbol[] {
+  return requestedSymbols.map((symbol) => {
+    const symbolRates = rates.filter((rate) => rate.unifiedSymbol === symbol);
+    const exchanges = [...new Set(symbolRates.map((rate) => rate.exchange))].sort();
+
+    return {
+      unified_symbol: symbol,
+      exchanges,
+      rates: symbolRates.length,
+      comparable: exchanges.length >= 2,
+    };
+  });
 }
 
 function buildOpportunities(rates: FundingRateSnapshot[]): Opportunity[] {

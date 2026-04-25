@@ -55,6 +55,39 @@ export type OpportunitySummary = {
   next_settlement_countdown: string | null;
 };
 
+export type OpportunityScanAuditSymbol = {
+  unified_symbol: string;
+  exchanges: string[];
+  rates: number;
+  comparable: boolean;
+};
+
+export type OpportunityScanAudit = {
+  id: string;
+  source: 'list' | 'manual_scan';
+  scanned_at: string;
+  requested_symbols: string[];
+  monitored_symbols: number;
+  funding_snapshots: number;
+  data_sources: string[];
+  comparable_symbols: number;
+  opportunity_count: number;
+  best_opportunity: {
+    symbol: string;
+    long_exchange: string;
+    short_exchange: string;
+    spread_8h_pct: number;
+  } | null;
+  symbols: OpportunityScanAuditSymbol[];
+};
+
+export type OpportunityAuditResponse = {
+  items: OpportunityScanAudit[];
+  total: number;
+  page: number;
+  size: number;
+};
+
 export type OpportunityQueryParams = {
   symbol?: string;
   minScore?: number;
@@ -394,6 +427,23 @@ export async function getOpportunitySummary(token: string): Promise<OpportunityS
   }
 
   return response.json() as Promise<OpportunitySummary>;
+}
+
+export async function getOpportunityAudit(token: string, page = 1, size = 20): Promise<OpportunityAuditResponse> {
+  const search = new URLSearchParams();
+  appendParam(search, 'page', page);
+  appendParam(search, 'size', size);
+  const response = await fetch(`${API_BASE_URL}/opportunities/audit?${search.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Opportunity audit failed');
+  }
+
+  return response.json() as Promise<OpportunityAuditResponse>;
 }
 
 export async function scanOpportunities(
