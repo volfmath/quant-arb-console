@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { AuthService } from './auth.service';
@@ -12,7 +12,9 @@ type LoginBody = {
 @Controller('auth')
 export class AuthController {
   constructor(
+    @Inject(AuthService)
     private readonly authService: AuthService,
+    @Inject(AuditService)
     private readonly auditService: AuditService,
   ) {}
 
@@ -41,4 +43,3 @@ export class AuthController {
     return { user: request.user };
   }
 }
-

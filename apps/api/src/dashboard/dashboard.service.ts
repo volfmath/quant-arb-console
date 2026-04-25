@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { TasksService } from '../tasks/tasks.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(@Inject(TasksService) private readonly tasksService: TasksService) {}
 
   assetSummary() {
     const tasks = this.tasksService.list().items;
@@ -50,4 +50,3 @@ export class DashboardService {
 function sum(values: number[]): number {
   return Number(values.reduce((total, value) => total + value, 0).toFixed(8));
 }
-

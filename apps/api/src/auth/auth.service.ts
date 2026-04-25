@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { getAppConfig } from '../config/app.config';
 import { getPermissionsForRole } from '../permissions/role-permissions';
@@ -6,7 +6,7 @@ import type { AuthUser, JwtPayload } from './auth.types';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(@Inject(JwtService) private readonly jwtService: JwtService) {}
 
   async login(username: string, password: string) {
     const user = this.validateDemoUser(username, password);

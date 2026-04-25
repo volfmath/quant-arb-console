@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { AlertsService } from './alerts.service';
@@ -6,7 +6,7 @@ import { AlertsService } from './alerts.service';
 @Controller('alerts')
 @UseGuards(JwtAuthGuard)
 export class AlertsController {
-  constructor(private readonly alertsService: AlertsService) {}
+  constructor(@Inject(AlertsService) private readonly alertsService: AlertsService) {}
 
   @Get()
   @RequirePermission('alert:view')
@@ -32,4 +32,3 @@ export class AlertsController {
     return this.alertsService.dismiss(id);
   }
 }
-

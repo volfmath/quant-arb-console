@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { DashboardService } from './dashboard.service';
@@ -7,7 +7,7 @@ import { DashboardService } from './dashboard.service';
 @UseGuards(JwtAuthGuard)
 @RequirePermission('dashboard:view')
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(@Inject(DashboardService) private readonly dashboardService: DashboardService) {}
 
   @Get('asset-summary')
   assetSummary() {
@@ -24,4 +24,3 @@ export class DashboardController {
     return this.dashboardService.riskSummary();
   }
 }
-

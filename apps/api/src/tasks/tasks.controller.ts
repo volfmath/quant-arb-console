@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { CreateTaskBody, TasksService } from './tasks.service';
@@ -6,7 +6,7 @@ import { CreateTaskBody, TasksService } from './tasks.service';
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(@Inject(TasksService) private readonly tasksService: TasksService) {}
 
   @Get()
   @RequirePermission('task:view')

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { OpportunitiesService } from './opportunities.service';
@@ -7,7 +7,7 @@ import { OpportunitiesService } from './opportunities.service';
 @UseGuards(JwtAuthGuard)
 @RequirePermission('opportunity:view')
 export class OpportunitiesController {
-  constructor(private readonly opportunitiesService: OpportunitiesService) {}
+  constructor(@Inject(OpportunitiesService) private readonly opportunitiesService: OpportunitiesService) {}
 
   @Get()
   async list(@Query('symbol') symbol?: string, @Query('min_score') minScore?: string) {
@@ -27,4 +27,3 @@ export class OpportunitiesController {
     return this.opportunitiesService.detail(id);
   }
 }
-

@@ -1,11 +1,11 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { AuthenticatedRequest } from '../auth/jwt-auth.guard';
 import { REQUIRED_PERMISSION_METADATA } from './require-permission.decorator';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(@Inject(Reflector) private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
     const requiredPermission = this.reflector.getAllAndOverride<string | undefined>(
@@ -25,4 +25,3 @@ export class PermissionGuard implements CanActivate {
     return true;
   }
 }
-

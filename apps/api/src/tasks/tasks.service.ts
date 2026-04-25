@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { ExecutionService, type ExecutedOrder, type OpenPosition } from '../execution/execution.service';
 import { RiskService } from '../risk/risk.service';
@@ -45,8 +45,11 @@ export class TasksService {
   private nextTaskNumber = 1;
 
   constructor(
+    @Inject(RiskService)
     private readonly riskService: RiskService,
+    @Inject(AuditService)
     private readonly auditService: AuditService,
+    @Inject(ExecutionService)
     private readonly executionService: ExecutionService,
   ) {}
 
