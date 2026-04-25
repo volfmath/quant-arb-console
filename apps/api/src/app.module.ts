@@ -6,9 +6,11 @@ import { HealthController } from './health.controller';
 import { OpportunitiesModule } from './opportunities/opportunities.module';
 import { PermissionGuard } from './permissions/permission.guard';
 import { RealtimeModule } from './realtime/realtime.module';
+import { RiskModule } from './risk/risk.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
-  imports: [AuthModule, ExchangeModule, RealtimeModule, OpportunitiesModule],
+  imports: [AuthModule, ExchangeModule, RealtimeModule, OpportunitiesModule, RiskModule, TasksModule],
   controllers: [HealthController],
   providers: [
     {
