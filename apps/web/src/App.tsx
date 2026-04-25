@@ -1,22 +1,25 @@
-import {
-  AlertOutlined,
-  DashboardOutlined,
-  SafetyOutlined,
-  ThunderboltOutlined,
-} from '@ant-design/icons';
-import { ConfigProvider, Layout, Menu, theme } from 'antd';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ConfigProvider, Layout, Menu, theme, Button } from 'antd';
+import { LoginPage } from './auth/LoginPage';
+import { useAuthStore } from './auth/auth-store';
+import { createMenuItems } from './permissions/menu';
 import './styles.css';
 
 const { Header, Sider, Content, Footer } = Layout;
 
-const menuItems = [
-  { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: 'opportunities', icon: <ThunderboltOutlined />, label: '套利机会' },
-  { key: 'risk', icon: <SafetyOutlined />, label: '风控中心' },
-  { key: 'alerts', icon: <AlertOutlined />, label: '告警中心' },
-];
+const queryClient = new QueryClient();
 
 export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppTheme>
+        <ConsoleApp />
+      </AppTheme>
+    </QueryClientProvider>
+  );
+}
+
+function AppTheme({ children }: { children: React.ReactNode }) {
   return (
     <ConfigProvider
       theme={{
@@ -28,10 +31,31 @@ export function App() {
         },
       }}
     >
+      {children}
+    </ConfigProvider>
+  );
+}
+
+function ConsoleApp() {
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  const menuItems = createMenuItems(user.permissions);
+
+  return (
       <Layout className="app-shell">
         <Header className="top-bar">
           <div className="brand">Quant Arb Console</div>
-          <div className="status">WS mock · Exchange mock · Live trading off</div>
+          <div className="top-actions">
+            <div className="status">WS mock · Exchange mock · Live trading off</div>
+            <Button size="small" onClick={logout}>
+              退出
+            </Button>
+          </div>
         </Header>
         <Layout>
           <Sider width={220} className="sidebar">
@@ -41,6 +65,7 @@ export function App() {
             <section className="page-header">
               <p className="eyebrow">MVP Phase 1</p>
               <h1>量化套利控制台骨架</h1>
+              <p className="subtitle">当前用户：{user.username} · {user.role}</p>
             </section>
             <section className="kpi-grid" aria-label="dashboard summary">
               <KpiCard title="总资产" value="$0.00" />
@@ -52,7 +77,6 @@ export function App() {
         </Layout>
         <Footer className="status-bar">API / WebSocket / Exchange adapters pending</Footer>
       </Layout>
-    </ConfigProvider>
   );
 }
 
@@ -64,4 +88,3 @@ function KpiCard({ title, value }: { title: string; value: string }) {
     </div>
   );
 }
-
