@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MockExchangeAdapter } from '../src/exchanges/mock-exchange.adapter';
+import type { RealtimeGateway } from '../src/realtime/realtime.gateway';
 import { OpportunitiesService } from '../src/opportunities/opportunities.service';
 
 describe('OpportunitiesService', () => {
@@ -28,6 +29,39 @@ describe('OpportunitiesService', () => {
     expect(summary.best_opportunity?.long_exchange).toBe('binance');
   });
 
+  it('normalizes symbols, filters by spread, sorts, and paginates', async () => {
+    const service = new OpportunitiesService(new MockExchangeAdapter());
+
+    const result = await service.list({
+      symbols: ['btc', 'ETHUSDT', 'SOL-USDT-SWAP', 'BTC/USDT:USDT'],
+      minSpread: 0.00016,
+      sortBy: 'score',
+      sortDirection: 'desc',
+      page: 2,
+      size: 1,
+    });
+
+    expect(result.total).toBe(3);
+    expect(result.page).toBe(2);
+    expect(result.size).toBe(1);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.unified_symbol).toBe('ETH/USDT:USDT');
+  });
+
+  it('publishes scan results to the realtime opportunities channel', async () => {
+    const realtimeGateway = { publish: vi.fn() } as unknown as RealtimeGateway;
+    const service = new OpportunitiesService(new MockExchangeAdapter(), realtimeGateway);
+
+    const result = await service.scanAndPublish({ symbols: ['BTC'], page: 1, size: 1 });
+
+    expect(result.items).toHaveLength(1);
+    expect(realtimeGateway.publish).toHaveBeenCalledWith(
+      'opportunities',
+      'opportunity:update',
+      expect.objectContaining({ total: 1 }),
+    );
+  });
+
   it('returns detail metrics for a known opportunity', async () => {
     const service = new OpportunitiesService(new MockExchangeAdapter());
     const result = await service.list();
@@ -38,4 +72,3 @@ describe('OpportunitiesService', () => {
     expect(detail.fee_estimate).toBeGreaterThan(0);
   });
 });
-

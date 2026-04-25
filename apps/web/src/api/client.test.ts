@@ -37,6 +37,7 @@ import {
   pauseTask,
   resumeTask,
   resolveAlert,
+  scanOpportunities,
   stopTask,
   toggleRiskRule,
   toggleStrategy,
@@ -80,6 +81,39 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3000/api/v1/opportunities',
       expect.objectContaining({
+        headers: { Authorization: 'Bearer abc' },
+      }),
+    );
+  });
+
+  it('serializes opportunity filters and scan requests', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, page: 1, size: 1 }),
+    } as Response);
+
+    await getOpportunities('abc', {
+      symbol: 'BTC',
+      minSpread: 0.0001,
+      sortBy: 'score',
+      sortDirection: 'desc',
+      page: 1,
+      size: 1,
+    });
+    await scanOpportunities('abc', { symbol: 'ETHUSDT', page: 1, size: 1 });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/opportunities?symbol=BTC&min_spread=0.0001&sort_by=score&sort_direction=desc&page=1&size=1',
+      expect.objectContaining({
+        headers: { Authorization: 'Bearer abc' },
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/opportunities/scan?symbol=ETHUSDT&page=1&size=1',
+      expect.objectContaining({
+        method: 'POST',
         headers: { Authorization: 'Bearer abc' },
       }),
     );

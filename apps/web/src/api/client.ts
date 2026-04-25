@@ -33,6 +33,16 @@ export type OpportunityListResponse = {
   size: number;
 };
 
+export type OpportunityQueryParams = {
+  symbol?: string;
+  minScore?: number;
+  minSpread?: number;
+  sortBy?: 'score' | 'spread' | 'annualized_return' | 'estimated_pnl';
+  sortDirection?: 'asc' | 'desc';
+  page?: number;
+  size?: number;
+};
+
 export type ArbitrageTask = {
   id: string;
   task_number: number;
@@ -324,8 +334,11 @@ export async function login(username: string, password: string): Promise<LoginRe
   return response.json() as Promise<LoginResponse>;
 }
 
-export async function getOpportunities(token: string): Promise<OpportunityListResponse> {
-  const response = await fetch(`${API_BASE_URL}/opportunities`, {
+export async function getOpportunities(
+  token: string,
+  params: OpportunityQueryParams = {},
+): Promise<OpportunityListResponse> {
+  const response = await fetch(`${API_BASE_URL}/opportunities${buildOpportunityQuery(params)}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -333,6 +346,24 @@ export async function getOpportunities(token: string): Promise<OpportunityListRe
 
   if (!response.ok) {
     throw new Error('机会列表加载失败');
+  }
+
+  return response.json() as Promise<OpportunityListResponse>;
+}
+
+export async function scanOpportunities(
+  token: string,
+  params: OpportunityQueryParams = {},
+): Promise<OpportunityListResponse> {
+  const response = await fetch(`${API_BASE_URL}/opportunities/scan${buildOpportunityQuery(params)}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Opportunity scan failed');
   }
 
   return response.json() as Promise<OpportunityListResponse>;
@@ -778,6 +809,28 @@ async function postJson<T>(token: string, path: string, body: T, errorMessage: s
   }
 
   return response.json();
+}
+
+function buildOpportunityQuery(params: OpportunityQueryParams): string {
+  const search = new URLSearchParams();
+  appendParam(search, 'symbol', params.symbol);
+  appendParam(search, 'min_score', params.minScore);
+  appendParam(search, 'min_spread', params.minSpread);
+  appendParam(search, 'sort_by', params.sortBy);
+  appendParam(search, 'sort_direction', params.sortDirection);
+  appendParam(search, 'page', params.page);
+  appendParam(search, 'size', params.size);
+
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
+
+function appendParam(search: URLSearchParams, key: string, value: string | number | undefined): void {
+  if (value === undefined || value === '') {
+    return;
+  }
+
+  search.set(key, String(value));
 }
 
 async function updateAlert(

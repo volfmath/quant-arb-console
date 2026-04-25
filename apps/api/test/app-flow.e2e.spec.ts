@@ -37,6 +37,14 @@ describe('Core API flow', () => {
     const opportunities = await get('/opportunities');
     expect(opportunities.total).toBeGreaterThan(0);
 
+    const filteredOpportunities = await get(
+      '/opportunities?symbol=btc&page=1&size=1&sort_by=score&min_spread=0.0001',
+    );
+    const scannedOpportunities = await post('/opportunities/scan?symbol=BTC&page=1&size=1');
+    expect(filteredOpportunities.total).toBe(1);
+    expect(filteredOpportunities.items[0].unified_symbol).toBe('BTC/USDT:USDT');
+    expect(scannedOpportunities.items).toHaveLength(1);
+
     const opportunity = opportunities.items[0];
     const task = await post('/tasks', {
       opportunity_id: opportunity.id,

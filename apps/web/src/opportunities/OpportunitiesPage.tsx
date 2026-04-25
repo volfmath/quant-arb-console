@@ -1,21 +1,45 @@
+import { ReloadOutlined, SearchOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Progress, Table, message } from 'antd';
+import { Alert, Button, Input, InputNumber, Progress, Select, Space, Table, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useState } from 'react';
 import {
   createTaskFromOpportunity,
   executeTask,
   getOpportunities,
   type Opportunity,
+  type OpportunityQueryParams,
+  scanOpportunities,
 } from '../api/client';
 import { useAuthStore } from '../auth/auth-store';
+
+const defaultFilters: OpportunityQueryParams = {
+  symbol: '',
+  minSpread: 0.0001,
+  sortBy: 'spread',
+  sortDirection: 'desc',
+  page: 1,
+  size: 20,
+};
 
 export function OpportunitiesPage() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
+  const [filters, setFilters] = useState<OpportunityQueryParams>(defaultFilters);
   const query = useQuery({
-    queryKey: ['opportunities'],
-    queryFn: () => getOpportunities(token ?? ''),
+    queryKey: ['opportunities', filters],
+    queryFn: () => getOpportunities(token ?? '', filters),
     enabled: Boolean(token),
+  });
+  const scanMutation = useMutation({
+    mutationFn: () => scanOpportunities(token ?? '', filters),
+    onSuccess: async () => {
+      message.success('机会扫描已完成');
+      await queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+    },
+    onError: () => {
+      message.error('机会扫描失败');
+    },
   });
   const createTaskMutation = useMutation({
     mutationFn: async (opportunity: Opportunity) => {
@@ -82,12 +106,68 @@ export function OpportunitiesPage() {
           <p className="eyebrow">Funding Rate Arbitrage</p>
           <h1>套利机会</h1>
         </div>
-        <Button onClick={() => void query.refetch()} loading={query.isFetching}>
-          刷新
-        </Button>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={() => void query.refetch()} loading={query.isFetching}>
+            刷新
+          </Button>
+          <Button
+            type="primary"
+            icon={<ThunderboltOutlined />}
+            onClick={() => scanMutation.mutate()}
+            loading={scanMutation.isPending}
+          >
+            扫描
+          </Button>
+        </Space>
       </div>
 
       {query.error ? <Alert type="error" message="机会列表加载失败" showIcon /> : null}
+
+      <section className="filter-toolbar" aria-label="opportunity filters">
+        <Input
+          allowClear
+          prefix={<SearchOutlined />}
+          placeholder="BTC / ETHUSDT / SOL-USDT-SWAP"
+          value={filters.symbol}
+          onChange={(event) => setFilters((current) => ({ ...current, symbol: event.target.value, page: 1 }))}
+        />
+        <InputNumber
+          min={0}
+          step={0.00001}
+          value={filters.minSpread}
+          addonBefore="最小费率差"
+          onChange={(value) =>
+            setFilters((current) => ({
+              ...current,
+              minSpread: typeof value === 'number' ? value : undefined,
+              page: 1,
+            }))
+          }
+        />
+        <InputNumber
+          min={0}
+          max={100}
+          value={filters.minScore}
+          addonBefore="最小评分"
+          onChange={(value) =>
+            setFilters((current) => ({
+              ...current,
+              minScore: typeof value === 'number' ? value : undefined,
+              page: 1,
+            }))
+          }
+        />
+        <Select
+          value={filters.sortBy}
+          onChange={(value) => setFilters((current) => ({ ...current, sortBy: value, page: 1 }))}
+          options={[
+            { value: 'spread', label: '费率差排序' },
+            { value: 'score', label: '评分排序' },
+            { value: 'annualized_return', label: '年化排序' },
+            { value: 'estimated_pnl', label: '预估收益排序' },
+          ]}
+        />
+      </section>
 
       <section className="kpi-grid compact" aria-label="opportunity summary">
         <KpiMini title="机会数" value={String(query.data?.total ?? 0)} />
@@ -101,7 +181,13 @@ export function OpportunitiesPage() {
         loading={query.isLoading}
         columns={columns}
         dataSource={query.data?.items ?? []}
-        pagination={false}
+        pagination={{
+          current: query.data?.page ?? filters.page,
+          pageSize: query.data?.size ?? filters.size,
+          total: query.data?.total ?? 0,
+          showSizeChanger: true,
+          onChange: (page, size) => setFilters((current) => ({ ...current, page, size })),
+        }}
         size="middle"
       />
     </section>
