@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createTaskFromOpportunity, executeTask, getOpportunities, getTasks, login } from './client';
+import {
+  createTaskFromOpportunity,
+  executeTask,
+  getOpportunities,
+  getTaskOrders,
+  getTaskPositions,
+  getTasks,
+  login,
+} from './client';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -95,6 +103,27 @@ describe('api client', () => {
       2,
       'http://localhost:3000/api/v1/tasks/task-1/execute',
       expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('loads task orders and positions with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    } as Response);
+
+    await getTaskOrders('abc', 'task-1');
+    await getTaskPositions('abc', 'task-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/tasks/task-1/orders',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/tasks/task-1/positions',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
     );
   });
 });

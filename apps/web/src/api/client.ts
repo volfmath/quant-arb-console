@@ -60,6 +60,42 @@ export type TaskListResponse = {
   size: number;
 };
 
+export type TaskOrder = {
+  id: string;
+  task_id: string;
+  exchange: string;
+  unified_symbol: string;
+  side: 'buy' | 'sell';
+  position_side: 'long' | 'short';
+  order_type: 'market';
+  qty: number;
+  avg_fill_price: number;
+  status: 'filled';
+  leg: 'long' | 'short';
+  is_close: boolean;
+  filled_at: string;
+};
+
+export type TaskPosition = {
+  id: string;
+  task_id: string;
+  exchange: string;
+  unified_symbol: string;
+  side: 'long' | 'short';
+  qty: number;
+  avg_entry_price: number;
+  leverage: number;
+  margin: number;
+  unrealized_pnl: number;
+  is_open: boolean;
+  opened_at: string;
+};
+
+export type TaskRelationsResponse<T> = {
+  items: T[];
+  total: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -141,4 +177,32 @@ export async function executeTask(token: string, taskId: string): Promise<Arbitr
   }
 
   return response.json() as Promise<ArbitrageTask>;
+}
+
+export async function getTaskOrders(token: string, taskId: string): Promise<TaskRelationsResponse<TaskOrder>> {
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/orders`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('订单列表加载失败');
+  }
+
+  return response.json() as Promise<TaskRelationsResponse<TaskOrder>>;
+}
+
+export async function getTaskPositions(token: string, taskId: string): Promise<TaskRelationsResponse<TaskPosition>> {
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/positions`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('持仓列表加载失败');
+  }
+
+  return response.json() as Promise<TaskRelationsResponse<TaskPosition>>;
 }
