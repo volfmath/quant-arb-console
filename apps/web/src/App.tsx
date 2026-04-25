@@ -15,6 +15,7 @@ import { createMenuItems } from './permissions/menu';
 import { SettingsPage } from './settings/SettingsPage';
 import { StrategiesPage } from './strategies/StrategiesPage';
 import { TasksPage } from './tasks/TasksPage';
+import { RiskPage } from './risk/RiskPage';
 import './styles.css';
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -88,6 +89,8 @@ function ConsoleApp() {
               <StrategiesPage />
             ) : selectedMenu === 'analytics' ? (
               <PnlAnalyticsPage />
+            ) : selectedMenu === 'risk' ? (
+              <RiskPage />
             ) : selectedMenu === 'alerts' ? (
               <AlertsPage />
             ) : selectedMenu === 'settings' ? (

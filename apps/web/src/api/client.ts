@@ -261,6 +261,39 @@ export type ListResponse<T> = {
   size: number;
 };
 
+export type RiskOverview = {
+  risk_level: 'low' | 'medium' | 'high' | 'critical';
+  risk_exposure: number;
+  leverage_usage_pct: number;
+  active_rules: number;
+  circuit_breaker_enabled: boolean;
+  circuit_breaker_reason: string;
+  exchange_mode: string;
+  live_trading_enabled: boolean;
+  updated_at: string;
+};
+
+export type RiskRule = {
+  id: string;
+  name: string;
+  metric: 'leverage' | 'position_size' | 'drawdown' | 'exchange_mode';
+  operator: '<=' | '>=' | '=';
+  threshold: number | string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RiskAccount = {
+  account_id: string;
+  exchange: string;
+  risk_level: string;
+  margin_usage_pct: number;
+  leverage: number;
+  open_positions: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -593,6 +626,50 @@ export async function getSystemStatus(token: string): Promise<SystemStatus> {
   }
 
   return response.json() as Promise<SystemStatus>;
+}
+
+export async function getRiskOverview(token: string): Promise<RiskOverview> {
+  const response = await fetch(`${API_BASE_URL}/risk/overview`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Risk overview failed');
+  }
+
+  return response.json() as Promise<RiskOverview>;
+}
+
+export async function getRiskRules(token: string): Promise<ListResponse<RiskRule>> {
+  return getList(token, 'risk/rules', 'Risk rules failed');
+}
+
+export async function createRiskRule(
+  token: string,
+  body: Pick<RiskRule, 'name' | 'metric' | 'operator' | 'threshold' | 'severity'>,
+): Promise<RiskRule> {
+  return postJson(token, 'risk/rules', body, 'Risk rule create failed') as Promise<RiskRule>;
+}
+
+export async function toggleRiskRule(token: string, ruleId: string): Promise<RiskRule> {
+  const response = await fetch(`${API_BASE_URL}/risk/rules/${ruleId}/toggle`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Risk rule toggle failed');
+  }
+
+  return response.json() as Promise<RiskRule>;
+}
+
+export async function getRiskAccounts(token: string): Promise<ListResponse<RiskAccount>> {
+  return getList(token, 'risk/accounts', 'Risk accounts failed');
+}
+
+export async function triggerCircuitBreak(token: string, reason: string): Promise<unknown> {
+  return postJson(token, 'risk/circuit-break', { reason, scope: 'all' }, 'Circuit break failed');
 }
 
 export async function acknowledgeAlert(token: string, alertId: string): Promise<AlertRecord> {

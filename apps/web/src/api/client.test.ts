@@ -4,6 +4,7 @@ import {
   createStrategy,
   createAccount,
   createExchange,
+  createRiskRule,
   createUser,
   deleteAccount,
   executeTask,
@@ -19,6 +20,9 @@ import {
   getAccounts,
   getAuditLogs,
   getExchanges,
+  getRiskAccounts,
+  getRiskOverview,
+  getRiskRules,
   getSystemStatus,
   getUsers,
   getStrategies,
@@ -27,7 +31,9 @@ import {
   getAlerts,
   getTasks,
   login,
+  toggleRiskRule,
   toggleStrategy,
+  triggerCircuitBreak,
   updateStrategy,
   updateUserRole,
 } from './client';
@@ -295,6 +301,47 @@ describe('api client', () => {
       10,
       'http://localhost:3000/api/v1/system/status',
       expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+  });
+
+  it('loads and mutates risk resources with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, page: 1, size: 0 }),
+    } as Response);
+
+    await getRiskOverview('abc');
+    await getRiskRules('abc');
+    await createRiskRule('abc', {
+      name: 'max leverage',
+      metric: 'leverage',
+      operator: '<=',
+      threshold: 3,
+      severity: 'high',
+    });
+    await toggleRiskRule('abc', 'rule-1');
+    await getRiskAccounts('abc');
+    await triggerCircuitBreak('abc', 'test');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/risk/overview',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:3000/api/v1/risk/rules',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:3000/api/v1/risk/rules/rule-1/toggle',
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'http://localhost:3000/api/v1/risk/circuit-break',
+      expect.objectContaining({ method: 'POST' }),
     );
   });
 });

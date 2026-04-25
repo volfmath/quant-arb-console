@@ -230,6 +230,10 @@ body {
   margin: 0 0 12px;
 }
 
+.inline-alert {
+  margin-bottom: 16px;
+}
+
 .kpi-card span {
   display: block;
   color: var(--text-secondary);
