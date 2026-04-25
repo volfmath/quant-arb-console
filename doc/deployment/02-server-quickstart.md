@@ -50,7 +50,8 @@ POSTGRES_PASSWORD=replace-with-a-strong-db-password
 
 EXCHANGE_MODE=testnet
 ENABLE_LIVE_TRADING=false
-VITE_API_BASE_URL=http://YOUR_SERVER_IP:3000/api/v1
+VITE_API_BASE_URL=/api/v1
+VITE_API_PROXY_TARGET=http://api:3000
 
 OPPORTUNITY_SYMBOLS=BTC,ETH,SOL,BNB,XRP,DOGE,ADA,AVAX,LINK,DOT,TRX,TON,LTC,BCH,UNI,APT,ARB,OP,NEAR,FIL,ETC,ATOM,INJ,SUI
 ```
@@ -85,6 +86,12 @@ API health:
 
 ```bash
 curl http://localhost:3000/api/v1/health
+```
+
+Web-to-API health through the web container proxy:
+
+```bash
+curl http://localhost:5173/api/v1/health
 ```
 
 Expected shape:
@@ -190,6 +197,7 @@ Use `down -v` only when you intentionally want a clean reset.
 - Change `ADMIN_PASSWORD`, `JWT_SECRET`, `CREDENTIAL_ENCRYPTION_KEY`, and `POSTGRES_PASSWORD`.
 - Do not expose RabbitMQ `15672`, Postgres `5432`, or Redis `6379` to the public internet.
 - Prefer a firewall or reverse proxy in front of `5173` and `3000`.
+- For the Docker Compose dev stack, prefer `VITE_API_BASE_URL=/api/v1` so the browser talks to the same web origin and Vite proxies API requests to the API container.
 - Keep `ENABLE_LIVE_TRADING=false`.
 - Keep server `.env` out of Git.
 

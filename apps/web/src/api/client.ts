@@ -433,14 +433,15 @@ export async function getOpportunityAudit(token: string, page = 1, size = 20): P
   const search = new URLSearchParams();
   appendParam(search, 'page', page);
   appendParam(search, 'size', size);
-  const response = await fetch(`${API_BASE_URL}/opportunities/audit?${search.toString()}`, {
+  const url = `${API_BASE_URL}/opportunities/audit?${search.toString()}`;
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
-    throw new Error('Opportunity audit failed');
+    throw new Error(`扫描审计接口失败: HTTP ${response.status} ${url}`);
   }
 
   return response.json() as Promise<OpportunityAuditResponse>;

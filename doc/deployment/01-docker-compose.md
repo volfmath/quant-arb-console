@@ -20,6 +20,8 @@ Health check:
 curl http://localhost:3000/api/v1/health
 ```
 
+The web container uses `VITE_API_BASE_URL=/api/v1` by default and proxies `/api/*` to the API container. This avoids browser-side `localhost` mistakes on a remote server.
+
 Default safety settings are mock-only:
 
 ```env

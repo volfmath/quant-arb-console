@@ -340,7 +340,7 @@ export function OpportunitiesPage() {
             children: (
               <>
                 {auditQuery.error ? (
-                  <Alert type="error" message="扫描审计加载失败，请确认 API 已更新并重新部署" showIcon />
+                  <Alert type="error" message={formatErrorMessage(auditQuery.error)} showIcon />
                 ) : null}
                 <Table<OpportunityScanAudit>
                   rowKey="id"
@@ -471,6 +471,14 @@ function Metric({ label, value, accent = false }: { label: string; value: string
 
 function formatMoney(value: number | undefined): string {
   return `$${(value ?? 0).toFixed(4)}`;
+}
+
+function formatErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return '扫描审计加载失败，请确认 API 已更新并重新部署';
 }
 
 function KpiMini({ title, value }: { title: string; value: string }) {
