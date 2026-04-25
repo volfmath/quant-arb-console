@@ -58,9 +58,13 @@
 - ✅ `doc/planning/01-mvp-roadmap.md` — MVP / V1 / V2 路线图（5 Phase, 8-10 周）
 - ✅ `doc/planning/02-task-breakdown.md` — 任务拆解与排期（71.5 人天，含前后端分工）
 
+### 测试与验证
+
+- ✅ `doc/testing/01-verification-plan.md` — 分阶段验证计划（每个 Phase / 每类任务的验收命令与检查项）
+
 ### Claude Prompts
 
-- ✅ `doc/prompt/01-master-prompt.md` — Claude 总控 Prompt
+- ✅ `doc/prompts/01-master-prompt.md` — Claude 总控 Prompt
 
 ---
 
@@ -72,7 +76,8 @@
 4. `doc/database/01-schema-overview.md` + `02-core-tables.md` — 理解数据模型
 5. `doc/api/01-rest-api.md` + `02-websocket-events.md` — 理解前后端接口契约
 6. `doc/frontend/01-design-system.md` → `02-layout-structure.md` → `03-page-specs.md` — 理解前端设计
-7. `doc/planning/01-mvp-roadmap.md` + `02-task-breakdown.md` — 理解开发计划
+7. `doc/testing/01-verification-plan.md` — 理解每一步如何验证
+8. `doc/planning/01-mvp-roadmap.md` + `02-task-breakdown.md` — 理解开发计划
 
 ---
 

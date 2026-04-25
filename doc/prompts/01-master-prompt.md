@@ -27,9 +27,10 @@ https://github.com/volfmath/quant-arb-console
 
 阅读顺序建议如下：
 1. README.md（整体目标、结构）
-2. docs/product/01-product-overview.md（产品定义、MVP 范围、角色）
-3. docs/architecture/01-system-architecture.md（系统架构与服务拆分）
-如果仓库中已经补充了更多文档（database/api/frontend/backend/planning 下的文件），也一并阅读。
+2. doc/product/01-product-overview.md（产品定义、MVP 范围、角色）
+3. doc/architecture/01-system-architecture.md（系统架构与服务拆分）
+4. doc/testing/01-verification-plan.md（每一步的验证标准）
+如果仓库中已经补充了更多文档（database/api/frontend/backend/planning/testing 下的文件），也一并阅读。
 
 在开始写任何代码之前，请先用你自己的话输出：
 
@@ -37,7 +38,8 @@ https://github.com/volfmath/quant-arb-console
 2. 系统的模块划分（前端、admin-console-api、opportunity-engine、execution-engine、risk-engine、market-data-service、pnl-service 等）
 3. 当前文档中已经定义好的核心数据结构（只列出关键表 / 核心实体，例如 arbitrage_opportunities、arbitrage_tasks、orders、positions、pnl_snapshots 等）
 4. 页面结构（左侧菜单 + 关键页面：Dashboard、套利机会、套利任务、策略管理、风控中心等）
-5. 你认为还不清晰、需要我补充或确认的地方（列成问题清单）
+5. 每个阶段应该如何验证，哪些测试是阻塞发布的
+6. 你认为还不清晰、需要我补充或确认的地方（列成问题清单）
 
 在我回复“确认无误，可以进入实现阶段”之前，请不要生成任何前端或后端代码。
 ```
@@ -59,6 +61,7 @@ https://github.com/volfmath/quant-arb-console
 6. 套利“机会”和实际执行的“任务”必须分开建模（arbitrage_opportunities vs arbitrage_tasks）。
 7. 风控必须前置到任务创建和下单之前：未通过风控的任务不得创建或执行。
 8. 所有关键操作（任务创建/停止、策略参数修改、风控规则修改）必须写入审计日志。
+9. 每个开发任务都必须给出验证方式；涉及交易执行的测试默认只使用 mock exchange / testnet。
 ```
 
 ---
@@ -95,7 +98,7 @@ https://github.com/volfmath/quant-arb-console
 2. 参考仓库里的产品和架构描述，保证字段命名与接口/表设计一致。
 ```
 
-你可以把这些子 prompt 放在后续的 `docs/prompts/02-backend-prompts.md` 和 `docs/prompts/03-frontend-prompts.md` 里进一步细化。
+你可以把这些子 prompt 放在后续的 `doc/prompts/02-backend-prompts.md` 和 `doc/prompts/03-frontend-prompts.md` 里进一步细化。
 
 ---
 
