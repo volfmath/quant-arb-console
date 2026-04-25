@@ -67,6 +67,13 @@ body {
   margin-bottom: 20px;
 }
 
+.page-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .page-header h1 {
   margin: 4px 0 0;
   font-size: 20px;
@@ -85,12 +92,37 @@ body {
   gap: 16px;
 }
 
+.kpi-grid.compact {
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  margin-bottom: 16px;
+}
+
 .kpi-card {
   min-height: 104px;
   padding: 16px;
   background: var(--bg-card);
   border: 1px solid var(--border-default);
   border-radius: 8px;
+}
+
+.kpi-card.mini {
+  min-height: 76px;
+}
+
+.kpi-card.mini strong {
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.data-table {
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.profit-text {
+  color: #22c55e;
+  font-family: 'JetBrains Mono', Consolas, monospace;
 }
 
 .kpi-card span {

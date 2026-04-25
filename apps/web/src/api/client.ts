@@ -8,6 +8,31 @@ export type LoginResponse = {
   user: AuthUser;
 };
 
+export type Opportunity = {
+  id: string;
+  unified_symbol: string;
+  symbol_display: string;
+  long_exchange: string;
+  short_exchange: string;
+  long_funding_rate: number;
+  short_funding_rate: number;
+  rate_spread: number;
+  spread_8h_pct: number;
+  estimated_pnl_8h: number;
+  annualized_return: number;
+  feasibility_score: number;
+  settlement_time: string;
+  settlement_countdown: string;
+  discovered_at: string;
+};
+
+export type OpportunityListResponse = {
+  items: Opportunity[];
+  total: number;
+  page: number;
+  size: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -22,3 +47,16 @@ export async function login(username: string, password: string): Promise<LoginRe
   return response.json() as Promise<LoginResponse>;
 }
 
+export async function getOpportunities(token: string): Promise<OpportunityListResponse> {
+  const response = await fetch(`${API_BASE_URL}/opportunities`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('机会列表加载失败');
+  }
+
+  return response.json() as Promise<OpportunityListResponse>;
+}

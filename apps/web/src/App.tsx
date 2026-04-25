@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
 import { ConfigProvider, Layout, Menu, theme, Button } from 'antd';
 import { LoginPage } from './auth/LoginPage';
 import { useAuthStore } from './auth/auth-store';
+import { OpportunitiesPage } from './opportunities/OpportunitiesPage';
 import { createMenuItems } from './permissions/menu';
 import './styles.css';
 
@@ -39,6 +41,7 @@ function AppTheme({ children }: { children: React.ReactNode }) {
 function ConsoleApp() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const [selectedMenu, setSelectedMenu] = useState('dashboard');
 
   if (!user) {
     return <LoginPage />;
@@ -59,24 +62,43 @@ function ConsoleApp() {
         </Header>
         <Layout>
           <Sider width={220} className="sidebar">
-            <Menu mode="inline" selectedKeys={['dashboard']} items={menuItems} />
+            <Menu
+              mode="inline"
+              selectedKeys={[selectedMenu]}
+              items={menuItems}
+              onClick={(event) => setSelectedMenu(event.key)}
+            />
           </Sider>
           <Content className="content">
-            <section className="page-header">
-              <p className="eyebrow">MVP Phase 1</p>
-              <h1>量化套利控制台骨架</h1>
-              <p className="subtitle">当前用户：{user.username} · {user.role}</p>
-            </section>
-            <section className="kpi-grid" aria-label="dashboard summary">
-              <KpiCard title="总资产" value="$0.00" />
-              <KpiCard title="今日收益" value="$0.00" />
-              <KpiCard title="运行策略" value="0" />
-              <KpiCard title="活跃告警" value="0" />
-            </section>
+            {selectedMenu === 'opportunities' ? (
+              <OpportunitiesPage />
+            ) : (
+              <DashboardShell username={user.username} role={user.role} />
+            )}
           </Content>
         </Layout>
         <Footer className="status-bar">API / WebSocket / Exchange adapters pending</Footer>
       </Layout>
+  );
+}
+
+function DashboardShell({ username, role }: { username: string; role: string }) {
+  return (
+    <>
+      <section className="page-header">
+        <p className="eyebrow">MVP Phase 1</p>
+        <h1>量化套利控制台骨架</h1>
+        <p className="subtitle">
+          当前用户：{username} · {role}
+        </p>
+      </section>
+      <section className="kpi-grid" aria-label="dashboard summary">
+        <KpiCard title="总资产" value="$0.00" />
+        <KpiCard title="今日收益" value="$0.00" />
+        <KpiCard title="运行策略" value="0" />
+        <KpiCard title="活跃告警" value="0" />
+      </section>
+    </>
   );
 }
 
