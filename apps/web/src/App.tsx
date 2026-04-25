@@ -5,6 +5,7 @@ import { LoginPage } from './auth/LoginPage';
 import { useAuthStore } from './auth/auth-store';
 import { OpportunitiesPage } from './opportunities/OpportunitiesPage';
 import { createMenuItems } from './permissions/menu';
+import { TasksPage } from './tasks/TasksPage';
 import './styles.css';
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -72,6 +73,8 @@ function ConsoleApp() {
           <Content className="content">
             {selectedMenu === 'opportunities' ? (
               <OpportunitiesPage />
+            ) : selectedMenu === 'tasks' ? (
+              <TasksPage />
             ) : (
               <DashboardShell username={user.username} role={user.role} />
             )}

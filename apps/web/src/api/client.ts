@@ -33,6 +33,28 @@ export type OpportunityListResponse = {
   size: number;
 };
 
+export type ArbitrageTask = {
+  id: string;
+  task_number: number;
+  status: 'pending';
+  unified_symbol: string;
+  long_exchange: string;
+  short_exchange: string;
+  leverage: number;
+  target_position_size: number;
+  realized_pnl: number;
+  unrealized_pnl: number;
+  net_pnl: number;
+  created_at: string;
+};
+
+export type TaskListResponse = {
+  items: ArbitrageTask[];
+  total: number;
+  page: number;
+  size: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -59,4 +81,18 @@ export async function getOpportunities(token: string): Promise<OpportunityListRe
   }
 
   return response.json() as Promise<OpportunityListResponse>;
+}
+
+export async function getTasks(token: string): Promise<TaskListResponse> {
+  const response = await fetch(`${API_BASE_URL}/tasks`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('任务列表加载失败');
+  }
+
+  return response.json() as Promise<TaskListResponse>;
 }

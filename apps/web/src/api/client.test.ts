@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getOpportunities, login } from './client';
+import { getOpportunities, getTasks, login } from './client';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -40,5 +40,20 @@ describe('api client', () => {
       }),
     );
   });
-});
 
+  it('sends bearer token for tasks endpoint', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, page: 1, size: 0 }),
+    } as Response);
+
+    await getTasks('task-token');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/v1/tasks',
+      expect.objectContaining({
+        headers: { Authorization: 'Bearer task-token' },
+      }),
+    );
+  });
+});
