@@ -14,6 +14,7 @@ import {
   getDashboardAssetSummary,
   getDashboardRiskSummary,
   getDashboardStrategySummary,
+  getOpportunityDetail,
   getOpportunities,
   getPnlByExchange,
   getPnlByStrategy,
@@ -114,6 +115,22 @@ describe('api client', () => {
       'http://localhost:3000/api/v1/opportunities/scan?symbol=ETHUSDT&page=1&size=1',
       expect.objectContaining({
         method: 'POST',
+        headers: { Authorization: 'Bearer abc' },
+      }),
+    );
+  });
+
+  it('loads opportunity detail with an encoded opportunity id', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'BTC/USDT:USDT:binance:okx' }),
+    } as Response);
+
+    await getOpportunityDetail('abc', 'BTC/USDT:USDT:binance:okx');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/v1/opportunities/BTC%2FUSDT%3AUSDT%3Abinance%3Aokx',
+      expect.objectContaining({
         headers: { Authorization: 'Bearer abc' },
       }),
     );

@@ -1,13 +1,15 @@
 import { ReloadOutlined, SearchOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Input, InputNumber, Progress, Select, Space, Table, message } from 'antd';
+import { Alert, Button, Input, InputNumber, Progress, Select, Space, Spin, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import {
   createTaskFromOpportunity,
   executeTask,
+  getOpportunityDetail,
   getOpportunities,
   type Opportunity,
+  type OpportunityDetail,
   type OpportunityQueryParams,
   scanOpportunities,
 } from '../api/client';
@@ -26,10 +28,16 @@ export function OpportunitiesPage() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<OpportunityQueryParams>(defaultFilters);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const query = useQuery({
     queryKey: ['opportunities', filters],
     queryFn: () => getOpportunities(token ?? '', filters),
     enabled: Boolean(token),
+  });
+  const detailQuery = useQuery({
+    queryKey: ['opportunity-detail', selectedOpportunity?.id],
+    queryFn: () => getOpportunityDetail(token ?? '', selectedOpportunity!.id),
+    enabled: Boolean(token && selectedOpportunity),
   });
   const scanMutation = useMutation({
     mutationFn: () => scanOpportunities(token ?? '', filters),
@@ -87,14 +95,19 @@ export function OpportunitiesPage() {
       title: '操作',
       key: 'action',
       render: (_, row) => (
-        <Button
-          type="primary"
-          size="small"
-          loading={createTaskMutation.isPending}
-          onClick={() => createTaskMutation.mutate(row)}
-        >
-          创建任务
-        </Button>
+        <Space>
+          <Button size="small" onClick={() => setSelectedOpportunity(row)}>
+            查看
+          </Button>
+          <Button
+            type="primary"
+            size="small"
+            loading={createTaskMutation.isPending}
+            onClick={() => createTaskMutation.mutate(row)}
+          >
+            创建任务
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -175,23 +188,92 @@ export function OpportunitiesPage() {
         <KpiMini title="刷新" value={query.isFetching ? 'loading' : 'ready'} />
       </section>
 
-      <Table<Opportunity>
-        rowKey="id"
-        className="data-table"
-        loading={query.isLoading}
-        columns={columns}
-        dataSource={query.data?.items ?? []}
-        pagination={{
-          current: query.data?.page ?? filters.page,
-          pageSize: query.data?.size ?? filters.size,
-          total: query.data?.total ?? 0,
-          showSizeChanger: true,
-          onChange: (page, size) => setFilters((current) => ({ ...current, page, size })),
-        }}
-        size="middle"
-      />
+      <section className={selectedOpportunity ? 'opportunity-workbench has-detail' : 'opportunity-workbench'}>
+        <Table<Opportunity>
+          rowKey="id"
+          className="data-table"
+          loading={query.isLoading}
+          columns={columns}
+          dataSource={query.data?.items ?? []}
+          onRow={(row) => ({
+            onClick: () => setSelectedOpportunity(row),
+          })}
+          pagination={{
+            current: query.data?.page ?? filters.page,
+            pageSize: query.data?.size ?? filters.size,
+            total: query.data?.total ?? 0,
+            showSizeChanger: true,
+            onChange: (page, size) => setFilters((current) => ({ ...current, page, size })),
+          }}
+          size="middle"
+        />
+
+        {selectedOpportunity ? (
+          <OpportunityDetailPanel
+            opportunity={selectedOpportunity}
+            detail={detailQuery.data}
+            loading={detailQuery.isLoading}
+            error={Boolean(detailQuery.error)}
+          />
+        ) : null}
+      </section>
     </section>
   );
+}
+
+function OpportunityDetailPanel({
+  opportunity,
+  detail,
+  loading,
+  error,
+}: {
+  opportunity: Opportunity;
+  detail?: OpportunityDetail;
+  loading: boolean;
+  error: boolean;
+}) {
+  const data = detail ?? opportunity;
+
+  return (
+    <aside className="opportunity-detail-panel" aria-label="opportunity detail">
+      <div className="panel-heading">
+        <div>
+          <span>Opportunity Detail</span>
+          <h2>{data.unified_symbol}</h2>
+        </div>
+        <Tag color="blue">{data.feasibility_score}</Tag>
+      </div>
+
+      {error ? <Alert type="error" message="机会详情加载失败" showIcon /> : null}
+      {loading ? <Spin /> : null}
+
+      <div className="detail-metrics">
+        <Metric label="多方交易所" value={data.long_exchange} />
+        <Metric label="空方交易所" value={data.short_exchange} />
+        <Metric label="8h 费率差" value={`${data.spread_8h_pct.toFixed(4)}%`} accent />
+        <Metric label="年化收益" value={`${data.annualized_return.toFixed(2)}%`} accent />
+        <Metric label="预估 8h" value={formatMoney(data.estimated_pnl_8h)} accent />
+        <Metric label="预估 24h" value={formatMoney(detail?.estimated_pnl_24h)} accent />
+        <Metric label="预估 7d" value={formatMoney(detail?.estimated_pnl_7d)} accent />
+        <Metric label="手续费估算" value={formatMoney(detail?.fee_estimate)} />
+        <Metric label="滑点估算" value={formatMoney(detail?.slippage_estimate)} />
+        <Metric label="结算倒计时" value={data.settlement_countdown} />
+      </div>
+    </aside>
+  );
+}
+
+function Metric({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="metric-row">
+      <span>{label}</span>
+      <strong className={accent ? 'profit-text' : undefined}>{value}</strong>
+    </div>
+  );
+}
+
+function formatMoney(value: number | undefined): string {
+  return `$${(value ?? 0).toFixed(4)}`;
 }
 
 function KpiMini({ title, value }: { title: string; value: string }) {

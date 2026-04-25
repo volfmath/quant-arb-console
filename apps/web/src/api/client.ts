@@ -26,6 +26,13 @@ export type Opportunity = {
   discovered_at: string;
 };
 
+export type OpportunityDetail = Opportunity & {
+  estimated_pnl_24h: number;
+  estimated_pnl_7d: number;
+  fee_estimate: number;
+  slippage_estimate: number;
+};
+
 export type OpportunityListResponse = {
   items: Opportunity[];
   total: number;
@@ -367,6 +374,20 @@ export async function scanOpportunities(
   }
 
   return response.json() as Promise<OpportunityListResponse>;
+}
+
+export async function getOpportunityDetail(token: string, opportunityId: string): Promise<OpportunityDetail> {
+  const response = await fetch(`${API_BASE_URL}/opportunities/${encodeURIComponent(opportunityId)}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Opportunity detail failed');
+  }
+
+  return response.json() as Promise<OpportunityDetail>;
 }
 
 export async function getTasks(token: string): Promise<TaskListResponse> {

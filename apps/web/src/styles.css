@@ -243,6 +243,50 @@ body {
   width: 100%;
 }
 
+.opportunity-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.opportunity-workbench.has-detail {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+}
+
+.opportunity-detail-panel {
+  min-height: 320px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+}
+
+.detail-metrics {
+  display: grid;
+  gap: 10px;
+}
+
+.metric-row {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.metric-row span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.metric-row strong {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+  text-align: right;
+}
+
 .inline-alert {
   margin-bottom: 16px;
 }
