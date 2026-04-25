@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { ExchangeModule } from './exchanges/exchange.module';
 import { ExecutionModule } from './execution/execution.module';
 import { HealthController } from './health.controller';
@@ -11,7 +12,16 @@ import { RiskModule } from './risk/risk.module';
 import { TasksModule } from './tasks/tasks.module';
 
 @Module({
-  imports: [AuthModule, ExchangeModule, ExecutionModule, RealtimeModule, OpportunitiesModule, RiskModule, TasksModule],
+  imports: [
+    AuthModule,
+    DashboardModule,
+    ExchangeModule,
+    ExecutionModule,
+    RealtimeModule,
+    OpportunitiesModule,
+    RiskModule,
+    TasksModule,
+  ],
   controllers: [HealthController],
   providers: [
     {

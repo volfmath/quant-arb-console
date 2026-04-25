@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createTaskFromOpportunity,
   executeTask,
+  getDashboardAssetSummary,
+  getDashboardRiskSummary,
+  getDashboardStrategySummary,
   getOpportunities,
   getTaskOrders,
   getTaskPositions,
@@ -123,6 +126,28 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       'http://localhost:3000/api/v1/tasks/task-1/positions',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+  });
+
+  it('loads dashboard summaries with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    } as Response);
+
+    await getDashboardAssetSummary('abc');
+    await getDashboardStrategySummary('abc');
+    await getDashboardRiskSummary('abc');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/dashboard/asset-summary',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:3000/api/v1/dashboard/risk-summary',
       expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
     );
   });

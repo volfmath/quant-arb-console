@@ -1,8 +1,13 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ConfigProvider, Layout, Menu, theme, Button } from 'antd';
 import { LoginPage } from './auth/LoginPage';
 import { useAuthStore } from './auth/auth-store';
+import {
+  getDashboardAssetSummary,
+  getDashboardRiskSummary,
+  getDashboardStrategySummary,
+} from './api/client';
 import { OpportunitiesPage } from './opportunities/OpportunitiesPage';
 import { createMenuItems } from './permissions/menu';
 import { TasksPage } from './tasks/TasksPage';
@@ -76,7 +81,7 @@ function ConsoleApp() {
             ) : selectedMenu === 'tasks' ? (
               <TasksPage />
             ) : (
-              <DashboardShell username={user.username} role={user.role} />
+              <DashboardShell username={user.username} role={user.role} token={useAuthStore.getState().token ?? ''} />
             )}
           </Content>
         </Layout>
@@ -85,7 +90,23 @@ function ConsoleApp() {
   );
 }
 
-function DashboardShell({ username, role }: { username: string; role: string }) {
+function DashboardShell({ username, role, token }: { username: string; role: string; token: string }) {
+  const assetQuery = useQuery({
+    queryKey: ['dashboard', 'asset'],
+    queryFn: () => getDashboardAssetSummary(token),
+    enabled: Boolean(token),
+  });
+  const strategyQuery = useQuery({
+    queryKey: ['dashboard', 'strategy'],
+    queryFn: () => getDashboardStrategySummary(token),
+    enabled: Boolean(token),
+  });
+  const riskQuery = useQuery({
+    queryKey: ['dashboard', 'risk'],
+    queryFn: () => getDashboardRiskSummary(token),
+    enabled: Boolean(token),
+  });
+
   return (
     <>
       <section className="page-header">
@@ -96,13 +117,17 @@ function DashboardShell({ username, role }: { username: string; role: string }) 
         </p>
       </section>
       <section className="kpi-grid" aria-label="dashboard summary">
-        <KpiCard title="总资产" value="$0.00" />
-        <KpiCard title="今日收益" value="$0.00" />
-        <KpiCard title="运行策略" value="0" />
-        <KpiCard title="活跃告警" value="0" />
+        <KpiCard title="总资产" value={formatMoney(assetQuery.data?.total_equity)} />
+        <KpiCard title="今日收益" value={formatMoney(assetQuery.data?.today_pnl)} />
+        <KpiCard title="运行策略" value={String(strategyQuery.data?.active_strategies ?? 0)} />
+        <KpiCard title="活跃告警" value={String(riskQuery.data?.active_alerts ?? 0)} />
       </section>
     </>
   );
+}
+
+function formatMoney(value: number | undefined): string {
+  return `$${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function KpiCard({ title, value }: { title: string; value: string }) {

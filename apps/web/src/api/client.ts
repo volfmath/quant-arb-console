@@ -96,6 +96,27 @@ export type TaskRelationsResponse<T> = {
   total: number;
 };
 
+export type AssetSummary = {
+  total_equity: number;
+  today_pnl: number;
+  available_balance: number;
+  available_pct: number;
+};
+
+export type StrategySummary = {
+  active_strategies: number;
+  total_strategies: number;
+  active_tasks: number;
+  total_tasks: number;
+};
+
+export type RiskSummary = {
+  risk_level: 'low' | 'medium' | 'high';
+  risk_exposure: number;
+  leverage_usage_pct: number;
+  active_alerts: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -205,4 +226,40 @@ export async function getTaskPositions(token: string, taskId: string): Promise<T
   }
 
   return response.json() as Promise<TaskRelationsResponse<TaskPosition>>;
+}
+
+export async function getDashboardAssetSummary(token: string): Promise<AssetSummary> {
+  const response = await fetch(`${API_BASE_URL}/dashboard/asset-summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Dashboard asset summary failed');
+  }
+
+  return response.json() as Promise<AssetSummary>;
+}
+
+export async function getDashboardStrategySummary(token: string): Promise<StrategySummary> {
+  const response = await fetch(`${API_BASE_URL}/dashboard/strategy-summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Dashboard strategy summary failed');
+  }
+
+  return response.json() as Promise<StrategySummary>;
+}
+
+export async function getDashboardRiskSummary(token: string): Promise<RiskSummary> {
+  const response = await fetch(`${API_BASE_URL}/dashboard/risk-summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('Dashboard risk summary failed');
+  }
+
+  return response.json() as Promise<RiskSummary>;
 }
