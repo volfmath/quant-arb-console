@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createTaskFromOpportunity,
   executeTask,
+  acknowledgeAlert,
+  dismissAlert,
   getDashboardAssetSummary,
   getDashboardRiskSummary,
   getDashboardStrategySummary,
   getOpportunities,
   getTaskOrders,
   getTaskPositions,
+  getAlerts,
   getTasks,
   login,
 } from './client';
@@ -149,6 +152,28 @@ describe('api client', () => {
       3,
       'http://localhost:3000/api/v1/dashboard/risk-summary',
       expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+  });
+
+  it('loads and updates alerts with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0, page: 1, size: 0 }),
+    } as Response);
+
+    await getAlerts('abc');
+    await acknowledgeAlert('abc', 'alert-1');
+    await dismissAlert('abc', 'alert-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/alerts',
+      expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/alerts/alert-1/acknowledge',
+      expect.objectContaining({ method: 'PUT' }),
     );
   });
 });

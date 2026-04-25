@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ConfigProvider, Layout, Menu, theme, Button } from 'antd';
 import { LoginPage } from './auth/LoginPage';
 import { useAuthStore } from './auth/auth-store';
+import { AlertsPage } from './alerts/AlertsPage';
 import {
   getDashboardAssetSummary,
   getDashboardRiskSummary,
@@ -80,6 +81,8 @@ function ConsoleApp() {
               <OpportunitiesPage />
             ) : selectedMenu === 'tasks' ? (
               <TasksPage />
+            ) : selectedMenu === 'alerts' ? (
+              <AlertsPage />
             ) : (
               <DashboardShell username={user.username} role={user.role} token={useAuthStore.getState().token ?? ''} />
             )}

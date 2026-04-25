@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
+import { AlertsModule } from './alerts/alerts.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ExchangeModule } from './exchanges/exchange.module';
 import { ExecutionModule } from './execution/execution.module';
@@ -14,6 +15,7 @@ import { TasksModule } from './tasks/tasks.module';
 @Module({
   imports: [
     AuthModule,
+    AlertsModule,
     DashboardModule,
     ExchangeModule,
     ExecutionModule,

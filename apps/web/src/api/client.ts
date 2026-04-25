@@ -117,6 +117,23 @@ export type RiskSummary = {
   active_alerts: number;
 };
 
+export type AlertRecord = {
+  id: string;
+  source: 'risk_engine' | 'execution_engine' | 'system';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'active' | 'acknowledged' | 'resolved' | 'dismissed';
+  title: string;
+  message: string;
+  created_at: string;
+};
+
+export type AlertListResponse = {
+  items: AlertRecord[];
+  total: number;
+  page: number;
+  size: number;
+};
+
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -262,4 +279,37 @@ export async function getDashboardRiskSummary(token: string): Promise<RiskSummar
   }
 
   return response.json() as Promise<RiskSummary>;
+}
+
+export async function getAlerts(token: string): Promise<AlertListResponse> {
+  const response = await fetch(`${API_BASE_URL}/alerts`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('告警列表加载失败');
+  }
+
+  return response.json() as Promise<AlertListResponse>;
+}
+
+export async function acknowledgeAlert(token: string, alertId: string): Promise<AlertRecord> {
+  return updateAlert(token, alertId, 'acknowledge');
+}
+
+export async function dismissAlert(token: string, alertId: string): Promise<AlertRecord> {
+  return updateAlert(token, alertId, 'dismiss');
+}
+
+async function updateAlert(token: string, alertId: string, action: 'acknowledge' | 'dismiss'): Promise<AlertRecord> {
+  const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/${action}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error('告警操作失败');
+  }
+
+  return response.json() as Promise<AlertRecord>;
 }
