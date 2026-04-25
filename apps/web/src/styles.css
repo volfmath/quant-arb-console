@@ -250,6 +250,10 @@ body {
   align-items: start;
 }
 
+.opportunity-tabs {
+  margin-top: 2px;
+}
+
 .opportunity-workbench.has-detail {
   grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
 }

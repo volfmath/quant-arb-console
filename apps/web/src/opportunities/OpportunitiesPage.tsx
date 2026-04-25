@@ -1,6 +1,6 @@
 import { ReloadOutlined, SearchOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Input, InputNumber, Modal, Progress, Select, Space, Spin, Table, Tag, message } from 'antd';
+import { Alert, Button, Input, InputNumber, Modal, Progress, Select, Space, Spin, Table, Tabs, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import {
@@ -208,46 +208,65 @@ export function OpportunitiesPage() {
         />
       </section>
 
-      <section className="kpi-grid compact" aria-label="opportunity summary">
-        <KpiMini title="机会数" value={String(summaryQuery.data?.total_count ?? query.data?.total ?? 0)} />
-        <KpiMini title="最佳机会" value={summaryQuery.data?.best_opportunity?.symbol ?? '-'} />
-        <KpiMini title="平均费率差" value={`${(summaryQuery.data?.avg_spread_8h ?? 0).toFixed(4)}%`} />
-        <KpiMini title="监控币种" value={String(summaryQuery.data?.monitored_symbols ?? 0)} />
-        <KpiMini title="交易所" value={String(summaryQuery.data?.monitored_exchanges ?? 0)} />
-        <KpiMini title="结算倒计时" value={summaryQuery.data?.next_settlement_countdown ?? '-'} />
-        <KpiMini title="刷新" value={query.isFetching ? 'loading' : 'ready'} />
-      </section>
+      <Tabs
+        className="opportunity-tabs"
+        items={[
+          {
+            key: 'funding',
+            label: '资金费率套利',
+            children: (
+              <>
+                <section className="kpi-grid compact" aria-label="opportunity summary">
+                  <KpiMini title="机会数" value={String(summaryQuery.data?.total_count ?? query.data?.total ?? 0)} />
+                  <KpiMini title="最佳机会" value={summaryQuery.data?.best_opportunity?.symbol ?? '-'} />
+                  <KpiMini title="平均费率差" value={`${(summaryQuery.data?.avg_spread_8h ?? 0).toFixed(4)}%`} />
+                  <KpiMini title="监控币种" value={String(summaryQuery.data?.monitored_symbols ?? 0)} />
+                  <KpiMini title="交易所" value={String(summaryQuery.data?.monitored_exchanges ?? 0)} />
+                  <KpiMini title="结算倒计时" value={summaryQuery.data?.next_settlement_countdown ?? '-'} />
+                  <KpiMini title="刷新" value={query.isFetching ? 'loading' : 'ready'} />
+                </section>
 
-      <section className={selectedOpportunity ? 'opportunity-workbench has-detail' : 'opportunity-workbench'}>
-        <Table<Opportunity>
-          rowKey="id"
-          className="data-table"
-          loading={query.isLoading}
-          columns={columns}
-          dataSource={query.data?.items ?? []}
-          onRow={(row) => ({
-            onClick: () => setSelectedOpportunity(row),
-          })}
-          pagination={{
-            current: query.data?.page ?? filters.page,
-            pageSize: query.data?.size ?? filters.size,
-            total: query.data?.total ?? 0,
-            showSizeChanger: true,
-            onChange: (page, size) => setFilters((current) => ({ ...current, page, size })),
-          }}
-          size="middle"
-        />
+                <section className={selectedOpportunity ? 'opportunity-workbench has-detail' : 'opportunity-workbench'}>
+                  <Table<Opportunity>
+                    rowKey="id"
+                    className="data-table"
+                    loading={query.isLoading}
+                    columns={columns}
+                    dataSource={query.data?.items ?? []}
+                    onRow={(row) => ({
+                      onClick: () => setSelectedOpportunity(row),
+                    })}
+                    pagination={{
+                      current: query.data?.page ?? filters.page,
+                      pageSize: query.data?.size ?? filters.size,
+                      total: query.data?.total ?? 0,
+                      showSizeChanger: true,
+                      onChange: (page, size) => setFilters((current) => ({ ...current, page, size })),
+                    }}
+                    size="middle"
+                  />
 
-        {selectedOpportunity ? (
-          <OpportunityDetailPanel
-            opportunity={selectedOpportunity}
-            detail={detailQuery.data}
-            loading={detailQuery.isLoading}
-            error={Boolean(detailQuery.error)}
-            onCreateTask={(opportunity) => setTaskDraft({ opportunity, leverage: 3, targetPositionSize: 200 })}
-          />
-        ) : null}
-      </section>
+                  {selectedOpportunity ? (
+                    <OpportunityDetailPanel
+                      opportunity={selectedOpportunity}
+                      detail={detailQuery.data}
+                      loading={detailQuery.isLoading}
+                      error={Boolean(detailQuery.error)}
+                      onCreateTask={(opportunity) => setTaskDraft({ opportunity, leverage: 3, targetPositionSize: 200 })}
+                    />
+                  ) : null}
+                </section>
+              </>
+            ),
+          },
+          {
+            key: 'spread',
+            label: '价差套利',
+            disabled: true,
+            children: null,
+          },
+        ]}
+      />
 
       <Modal
         title="创建套利任务"
