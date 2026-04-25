@@ -15,4 +15,20 @@ describe('AlertsService', () => {
     const dismissed = service.dismiss('mock-alert-api-health');
     expect(dismissed.status).toBe('dismissed');
   });
+
+  it('creates and resolves runtime alerts', () => {
+    const service = new AlertsService();
+
+    const alert = service.create({
+      source: 'risk_engine',
+      severity: 'critical',
+      title: 'Circuit break',
+      message: 'Manual circuit break',
+    });
+    const resolved = service.resolve(alert.id);
+
+    expect(alert.status).toBe('resolved');
+    expect(resolved.resolved_at).toBeTruthy();
+    expect(service.list().total).toBe(2);
+  });
 });

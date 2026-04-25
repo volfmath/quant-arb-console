@@ -12,6 +12,13 @@ export type AlertRecord = {
   resolved_at?: string;
 };
 
+export type CreateAlertInput = {
+  source: AlertRecord['source'];
+  severity: AlertRecord['severity'];
+  title: string;
+  message: string;
+};
+
 @Injectable()
 export class AlertsService {
   private readonly alerts: AlertRecord[] = [
@@ -41,6 +48,20 @@ export class AlertsService {
     };
   }
 
+  create(input: CreateAlertInput): AlertRecord {
+    const alert: AlertRecord = {
+      id: crypto.randomUUID(),
+      source: input.source,
+      severity: input.severity,
+      status: 'active',
+      title: input.title,
+      message: input.message,
+      created_at: new Date().toISOString(),
+    };
+    this.alerts.unshift(alert);
+    return alert;
+  }
+
   acknowledge(id: string): AlertRecord {
     const alert = this.find(id);
     alert.status = 'acknowledged';
@@ -55,6 +76,13 @@ export class AlertsService {
     return alert;
   }
 
+  resolve(id: string): AlertRecord {
+    const alert = this.find(id);
+    alert.status = 'resolved';
+    alert.resolved_at = new Date().toISOString();
+    return alert;
+  }
+
   private find(id: string): AlertRecord {
     const alert = this.alerts.find((item) => item.id === id);
     if (!alert) {
@@ -64,4 +92,3 @@ export class AlertsService {
     return alert;
   }
 }
-

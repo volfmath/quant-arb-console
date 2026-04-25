@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, Space, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { acknowledgeAlert, dismissAlert, getAlerts, type AlertRecord } from '../api/client';
+import { acknowledgeAlert, dismissAlert, getAlerts, resolveAlert, type AlertRecord } from '../api/client';
 import { useAuthStore } from '../auth/auth-store';
 
 export function AlertsPage() {
@@ -13,8 +13,15 @@ export function AlertsPage() {
     enabled: Boolean(token),
   });
   const mutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: 'acknowledge' | 'dismiss' }) =>
-      action === 'acknowledge' ? acknowledgeAlert(token ?? '', id) : dismissAlert(token ?? '', id),
+    mutationFn: ({ id, action }: { id: string; action: 'acknowledge' | 'dismiss' | 'resolve' }) => {
+      if (action === 'acknowledge') {
+        return acknowledgeAlert(token ?? '', id);
+      }
+      if (action === 'resolve') {
+        return resolveAlert(token ?? '', id);
+      }
+      return dismissAlert(token ?? '', id);
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['alerts'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard', 'risk'] });
@@ -33,6 +40,9 @@ export function AlertsPage() {
         <Space>
           <Button size="small" onClick={() => mutation.mutate({ id: row.id, action: 'acknowledge' })}>
             确认
+          </Button>
+          <Button size="small" onClick={() => mutation.mutate({ id: row.id, action: 'resolve' })}>
+            解决
           </Button>
           <Button size="small" danger onClick={() => mutation.mutate({ id: row.id, action: 'dismiss' })}>
             忽略

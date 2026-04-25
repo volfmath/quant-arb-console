@@ -31,4 +31,10 @@ export class AlertsController {
   dismiss(@Param('id') id: string) {
     return this.alertsService.dismiss(id);
   }
+
+  @Put(':id/resolve')
+  @RequirePermission('alert:dismiss')
+  resolve(@Param('id') id: string) {
+    return this.alertsService.resolve(id);
+  }
 }

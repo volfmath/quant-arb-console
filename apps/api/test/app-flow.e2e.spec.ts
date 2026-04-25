@@ -109,12 +109,16 @@ describe('Core API flow', () => {
     const riskAccounts = await get('/risk/accounts');
     const circuitBreak = await post('/risk/circuit-break', { reason: 'http flow test', scope: 'all' });
     const riskOverview = await get('/risk/overview');
+    const alerts = await get('/alerts');
+    const resolvedAlert = await put(`/alerts/${alerts.items[0].id}/resolve`);
     const auditLogs = await get('/audit-logs');
 
     expect(toggledRule.enabled).toBe(false);
     expect(riskAccounts.total).toBe(2);
     expect(circuitBreak.enabled).toBe(true);
     expect(riskOverview.risk_level).toBe('critical');
+    expect(alerts.items[0]).toMatchObject({ source: 'risk_engine', severity: 'critical' });
+    expect(resolvedAlert.status).toBe('resolved');
     expect(auditLogs.total).toBeGreaterThan(0);
   });
 

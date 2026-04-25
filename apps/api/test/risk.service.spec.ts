@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { AlertsService } from '../src/alerts/alerts.service';
 import { AuditService } from '../src/audit/audit.service';
 import { RiskService } from '../src/risk/risk.service';
 
@@ -65,5 +66,21 @@ describe('RiskService', () => {
     expect(service.accounts().total).toBe(2);
     expect(circuitBreak.enabled).toBe(true);
     expect(audit.list()[0]?.action).toBe('risk:circuit_break');
+  });
+
+  it('creates and publishes an alert when circuit break is triggered', () => {
+    const alerts = new AlertsService();
+    const realtime = { publish: vi.fn() };
+    const service = new RiskService(new AuditService(), alerts, realtime as never);
+
+    service.circuitBreak({ reason: 'operator stop', scope: 'all' });
+
+    expect(alerts.list().items[0]).toMatchObject({
+      source: 'risk_engine',
+      severity: 'critical',
+      status: 'active',
+      message: 'operator stop',
+    });
+    expect(realtime.publish).toHaveBeenCalledWith('alerts', 'alert:created', expect.objectContaining({ severity: 'critical' }));
   });
 });

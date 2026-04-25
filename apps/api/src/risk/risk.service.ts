@@ -1,6 +1,8 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { AlertsService } from '../alerts/alerts.service';
 import { AuditService } from '../audit/audit.service';
 import { getAppConfig } from '../config/app.config';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 export type RiskCheckInput = {
   targetPositionSize: number;
@@ -76,6 +78,12 @@ export class RiskService {
     @Optional()
     @Inject(AuditService)
     private readonly auditService?: AuditService,
+    @Optional()
+    @Inject(AlertsService)
+    private readonly alertsService?: AlertsService,
+    @Optional()
+    @Inject(RealtimeGateway)
+    private readonly realtimeGateway?: RealtimeGateway,
   ) {}
 
   checkBeforeOpen(input: RiskCheckInput): RiskCheckResult {
@@ -236,6 +244,15 @@ export class RiskService {
       resourceId: this.circuitBreaker.scope,
       afterState: this.circuitBreaker,
     });
+    const alert = this.alertsService?.create({
+      source: 'risk_engine',
+      severity: 'critical',
+      title: '手动熔断已触发',
+      message: this.circuitBreaker.reason,
+    });
+    if (alert) {
+      this.realtimeGateway?.publish('alerts', 'alert:created', alert);
+    }
 
     return this.circuitBreaker;
   }

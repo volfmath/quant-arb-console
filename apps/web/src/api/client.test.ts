@@ -36,6 +36,7 @@ import {
   login,
   pauseTask,
   resumeTask,
+  resolveAlert,
   stopTask,
   toggleRiskRule,
   toggleStrategy,
@@ -219,12 +220,23 @@ describe('api client', () => {
 
     await getAlerts('abc');
     await acknowledgeAlert('abc', 'alert-1');
+    await resolveAlert('abc', 'alert-1');
     await dismissAlert('abc', 'alert-1');
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
       'http://localhost:3000/api/v1/alerts',
       expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:3000/api/v1/alerts/alert-1/resolve',
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:3000/api/v1/alerts/alert-1/dismiss',
+      expect.objectContaining({ method: 'PUT' }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,

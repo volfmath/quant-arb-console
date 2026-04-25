@@ -747,6 +747,10 @@ export async function dismissAlert(token: string, alertId: string): Promise<Aler
   return updateAlert(token, alertId, 'dismiss');
 }
 
+export async function resolveAlert(token: string, alertId: string): Promise<AlertRecord> {
+  return updateAlert(token, alertId, 'resolve');
+}
+
 async function getList<T>(token: string, path: string, errorMessage: string): Promise<ListResponse<T>> {
   const response = await fetch(`${API_BASE_URL}/${path}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -776,7 +780,11 @@ async function postJson<T>(token: string, path: string, body: T, errorMessage: s
   return response.json();
 }
 
-async function updateAlert(token: string, alertId: string, action: 'acknowledge' | 'dismiss'): Promise<AlertRecord> {
+async function updateAlert(
+  token: string,
+  alertId: string,
+  action: 'acknowledge' | 'dismiss' | 'resolve',
+): Promise<AlertRecord> {
   const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/${action}`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
