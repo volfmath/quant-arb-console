@@ -7,7 +7,35 @@ export type AppConfig = {
   adminPassword: string;
   exchangeMode: 'mock' | 'testnet' | 'live';
   liveTradingEnabled: boolean;
+  opportunitySymbols: string[];
 };
+
+export const DEFAULT_OPPORTUNITY_SYMBOLS = [
+  'BTC',
+  'ETH',
+  'SOL',
+  'BNB',
+  'XRP',
+  'DOGE',
+  'ADA',
+  'AVAX',
+  'LINK',
+  'DOT',
+  'TRX',
+  'TON',
+  'LTC',
+  'BCH',
+  'UNI',
+  'APT',
+  'ARB',
+  'OP',
+  'NEAR',
+  'FIL',
+  'ETC',
+  'ATOM',
+  'INJ',
+  'SUI',
+];
 
 export function getAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   return {
@@ -19,6 +47,7 @@ export function getAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     adminPassword: env.ADMIN_PASSWORD ?? 'change-me-admin',
     exchangeMode: parseExchangeMode(env.EXCHANGE_MODE),
     liveTradingEnabled: env.ENABLE_LIVE_TRADING === 'true',
+    opportunitySymbols: parseCsvList(env.OPPORTUNITY_SYMBOLS, DEFAULT_OPPORTUNITY_SYMBOLS),
   };
 }
 
@@ -41,4 +70,13 @@ function parsePort(value: string | undefined, fallback: number, name: string): n
   }
 
   return port;
+}
+
+function parseCsvList(value: string | undefined, fallback: readonly string[]): string[] {
+  const parsed = (value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return parsed.length ? [...new Set(parsed)] : [...fallback];
 }

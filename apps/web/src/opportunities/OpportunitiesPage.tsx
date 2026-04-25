@@ -166,7 +166,7 @@ export function OpportunitiesPage() {
         <Input
           allowClear
           prefix={<SearchOutlined />}
-          placeholder="BTC / ETHUSDT / SOL-USDT-SWAP"
+          placeholder="BTC / ETH / SOL / XRP / DOGE"
           value={filters.symbol}
           onChange={(event) => setFilters((current) => ({ ...current, symbol: event.target.value, page: 1 }))}
         />

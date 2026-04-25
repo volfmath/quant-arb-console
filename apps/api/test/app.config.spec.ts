@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getAppConfig } from '../src/config/app.config';
+import { DEFAULT_OPPORTUNITY_SYMBOLS, getAppConfig } from '../src/config/app.config';
 import { getCacheConfig } from '../src/config/cache.config';
 import { getQueueConfig } from '../src/config/queue.config';
 
@@ -10,7 +10,16 @@ describe('app config', () => {
       exchangeMode: 'mock',
       liveTradingEnabled: false,
       adminUsername: 'admin',
+      opportunitySymbols: DEFAULT_OPPORTUNITY_SYMBOLS,
     });
+  });
+
+  it('parses a configurable opportunity symbol universe', () => {
+    expect(
+      getAppConfig({
+        OPPORTUNITY_SYMBOLS: 'BTC, ETHUSDT, SOL-USDT-SWAP, BTC',
+      }).opportunitySymbols,
+    ).toEqual(['BTC', 'ETHUSDT', 'SOL-USDT-SWAP']);
   });
 
   it('parses cache and queue defaults', () => {
@@ -29,4 +38,3 @@ describe('app config', () => {
     expect(() => getAppConfig({ API_PORT: '0' })).toThrow('Invalid API_PORT');
   });
 });
-

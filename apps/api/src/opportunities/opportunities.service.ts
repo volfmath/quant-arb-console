@@ -4,6 +4,7 @@ import {
   type ExchangeAdapter,
   type FundingRateSnapshot,
 } from '../exchanges/exchange-adapter.interface';
+import { getAppConfig } from '../config/app.config';
 import { normalizeInstrumentSymbol } from '../exchanges/instrument-normalizer';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
@@ -35,7 +36,6 @@ export type ListOptions = {
   size?: number;
 };
 
-const defaultSymbols = ['BTC/USDT:USDT', 'ETH/USDT:USDT', 'SOL/USDT:USDT'];
 const referencePositionSize = 1000;
 
 @Injectable()
@@ -48,7 +48,8 @@ export class OpportunitiesService {
   ) {}
 
   async list(options: ListOptions = {}) {
-    const symbols = normalizeSymbols(options.symbols?.length ? options.symbols : defaultSymbols);
+    const monitoredSymbols = getMonitoredSymbols();
+    const symbols = normalizeSymbols(options.symbols?.length ? options.symbols : monitoredSymbols);
     const rates = await this.exchangeAdapter.getFundingRates(symbols);
     let items = buildOpportunities(rates);
 
@@ -88,7 +89,7 @@ export class OpportunitiesService {
         : null,
       total_count: result.total,
       avg_spread_8h: average(result.items.map((item) => item.spread_8h_pct)),
-      monitored_symbols: defaultSymbols.length,
+      monitored_symbols: getMonitoredSymbols().length,
       monitored_exchanges: 3,
       next_settlement: best?.settlement_time ?? null,
       next_settlement_countdown: best?.settlement_countdown ?? null,
@@ -132,10 +133,14 @@ function buildOpportunities(rates: FundingRateSnapshot[]): Opportunity[] {
 
   const opportunities: Opportunity[] = [];
   for (const [symbol, symbolRates] of bySymbol.entries()) {
+    if (new Set(symbolRates.map((rate) => rate.exchange)).size < 2) {
+      continue;
+    }
+
     const sorted = [...symbolRates].sort((a, b) => a.fundingRate - b.fundingRate);
     const longRate = sorted[0];
     const shortRate = sorted[sorted.length - 1];
-    if (!longRate || !shortRate) {
+    if (!longRate || !shortRate || longRate.exchange === shortRate.exchange) {
       continue;
     }
 
@@ -170,6 +175,10 @@ function scoreOpportunity(spread: number): number {
 
 function normalizeSymbols(symbols: string[]): string[] {
   return [...new Set(symbols.map((symbol) => normalizeInstrumentSymbol(symbol).unifiedSymbol))];
+}
+
+function getMonitoredSymbols(): string[] {
+  return normalizeSymbols(getAppConfig().opportunitySymbols);
 }
 
 function sortOpportunities(
