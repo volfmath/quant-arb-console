@@ -64,6 +64,7 @@ export function OpportunitiesPage() {
     onSuccess: async () => {
       message.success('机会扫描已完成');
       await queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      await auditQuery.refetch();
     },
     onError: () => {
       message.error('机会扫描失败');
@@ -202,7 +203,14 @@ export function OpportunitiesPage() {
           <h1>套利机会</h1>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={() => void query.refetch()} loading={query.isFetching}>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              void query.refetch();
+              void auditQuery.refetch();
+            }}
+            loading={query.isFetching || auditQuery.isFetching}
+          >
             刷新
           </Button>
           <Button
@@ -266,6 +274,11 @@ export function OpportunitiesPage() {
 
       <Tabs
         className="opportunity-tabs"
+        onChange={(key) => {
+          if (key === 'audit') {
+            void auditQuery.refetch();
+          }
+        }}
         items={[
           {
             key: 'funding',
@@ -333,6 +346,11 @@ export function OpportunitiesPage() {
                 dataSource={auditQuery.data?.items ?? []}
                 pagination={false}
                 size="middle"
+                locale={{
+                  emptyText: scanMutation.isPending
+                    ? '扫描中，审计记录生成后会显示在这里'
+                    : '暂无扫描审计记录，请先点击右上角“扫描”',
+                }}
               />
             ),
           },
