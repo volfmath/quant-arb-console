@@ -28,3 +28,11 @@ ENABLE_LIVE_TRADING=false
 ```
 
 Do not change these defaults for MVP local development.
+
+Exchange mode notes:
+
+- `mock`: deterministic local exchange adapter. This is the default and supports the full demo flow.
+- `testnet`: uses public Binance / Bybit / OKX market-data endpoints for funding rates and tickers. Authenticated order placement is not implemented.
+- `live`: also uses public market data. Live trading remains blocked unless `ENABLE_LIVE_TRADING=true`, and authenticated order placement is still not implemented.
+
+The current stack is safe for market-data testing and mock execution. It is not ready for real-money trading.
