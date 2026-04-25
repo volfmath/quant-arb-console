@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: quant_arb_console
+      POSTGRES_USER: quant_arb
+      POSTGRES_PASSWORD: quant_arb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quant_arb -d quant_arb_console"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: node:22-alpine
+    working_dir: /workspace
+    command: sh -c "npm ci && npm run dev -w @quant-arb/api"
+    environment:
+      NODE_ENV: development
+      API_PORT: 3000
+      JWT_SECRET: change-me
+      JWT_EXPIRES_IN_SECONDS: 86400
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: change-me-admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quant_arb_console
+      POSTGRES_USER: quant_arb
+      POSTGRES_PASSWORD: quant_arb
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      EXCHANGE_MODE: mock
+      ENABLE_LIVE_TRADING: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace
+      - api_node_modules:/workspace/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    image: node:22-alpine
+    working_dir: /workspace
+    command: sh -c "npm ci && npm run dev -w @quant-arb/web -- --port 5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000/api/v1
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/workspace
+      - web_node_modules:/workspace/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  api_node_modules:
+  web_node_modules:
