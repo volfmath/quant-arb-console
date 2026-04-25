@@ -20,7 +20,7 @@ export type ArbitrageTask = {
   task_number: number;
   opportunity_id?: string;
   strategy_id?: string;
-  status: 'pending' | 'confirming' | 'running' | 'failed';
+  status: 'pending' | 'confirming' | 'running' | 'paused' | 'canceled' | 'failed';
   unified_symbol: string;
   long_exchange: string;
   short_exchange: string;
@@ -155,6 +155,57 @@ export class TasksService {
     return task;
   }
 
+  pause(id: string): ArbitrageTask {
+    const task = this.findTask(id);
+    if (task.status !== 'running') {
+      throw new BadRequestException(`Task cannot pause from status: ${task.status}`);
+    }
+
+    task.status = 'paused';
+    this.auditService.record({
+      action: 'task:pause',
+      resourceType: 'arbitrage_task',
+      resourceId: task.id,
+      afterState: task,
+    });
+
+    return task;
+  }
+
+  resume(id: string): ArbitrageTask {
+    const task = this.findTask(id);
+    if (task.status !== 'paused') {
+      throw new BadRequestException(`Task cannot resume from status: ${task.status}`);
+    }
+
+    task.status = 'running';
+    this.auditService.record({
+      action: 'task:resume',
+      resourceType: 'arbitrage_task',
+      resourceId: task.id,
+      afterState: task,
+    });
+
+    return task;
+  }
+
+  stop(id: string): ArbitrageTask {
+    const task = this.findTask(id);
+    if (!['pending', 'running', 'paused'].includes(task.status)) {
+      throw new BadRequestException(`Task cannot stop from status: ${task.status}`);
+    }
+
+    task.status = 'canceled';
+    this.auditService.record({
+      action: 'task:stop',
+      resourceType: 'arbitrage_task',
+      resourceId: task.id,
+      afterState: task,
+    });
+
+    return task;
+  }
+
   orders(id: string) {
     this.assertTaskExists(id);
 
@@ -176,8 +227,15 @@ export class TasksService {
   }
 
   private assertTaskExists(id: string): void {
-    if (!this.tasks.some((task) => task.id === id)) {
+    this.findTask(id);
+  }
+
+  private findTask(id: string): ArbitrageTask {
+    const task = this.tasks.find((item) => item.id === id);
+    if (!task) {
       throw new NotFoundException('Task not found');
     }
+
+    return task;
   }
 }

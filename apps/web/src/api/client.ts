@@ -36,7 +36,7 @@ export type OpportunityListResponse = {
 export type ArbitrageTask = {
   id: string;
   task_number: number;
-  status: 'pending' | 'confirming' | 'running' | 'failed';
+  status: 'pending' | 'confirming' | 'running' | 'paused' | 'canceled' | 'failed';
   unified_symbol: string;
   long_exchange: string;
   short_exchange: string;
@@ -393,6 +393,18 @@ export async function executeTask(token: string, taskId: string): Promise<Arbitr
   return response.json() as Promise<ArbitrageTask>;
 }
 
+export async function pauseTask(token: string, taskId: string): Promise<ArbitrageTask> {
+  return mutateTaskStatus(token, taskId, 'pause');
+}
+
+export async function resumeTask(token: string, taskId: string): Promise<ArbitrageTask> {
+  return mutateTaskStatus(token, taskId, 'resume');
+}
+
+export async function stopTask(token: string, taskId: string): Promise<ArbitrageTask> {
+  return mutateTaskStatus(token, taskId, 'stop');
+}
+
 export async function getTaskOrders(token: string, taskId: string): Promise<TaskRelationsResponse<TaskOrder>> {
   const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/orders`, {
     headers: {
@@ -405,6 +417,25 @@ export async function getTaskOrders(token: string, taskId: string): Promise<Task
   }
 
   return response.json() as Promise<TaskRelationsResponse<TaskOrder>>;
+}
+
+async function mutateTaskStatus(
+  token: string,
+  taskId: string,
+  action: 'pause' | 'resume' | 'stop',
+): Promise<ArbitrageTask> {
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/${action}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Task status update failed');
+  }
+
+  return response.json() as Promise<ArbitrageTask>;
 }
 
 export async function getTaskPositions(token: string, taskId: string): Promise<TaskRelationsResponse<TaskPosition>> {

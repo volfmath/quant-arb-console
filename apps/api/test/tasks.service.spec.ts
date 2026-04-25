@@ -57,4 +57,28 @@ describe('TasksService', () => {
     expect(service.positions(task.id).total).toBe(2);
     expect(audit.list().map((record) => record.action)).toEqual(['task:create', 'task:execute']);
   });
+
+  it('pauses, resumes and stops a running task', () => {
+    const audit = new AuditService();
+    const service = new TasksService(new RiskService(), audit, new ExecutionService());
+    const task = service.create({
+      long_account_id: 'long',
+      short_account_id: 'short',
+      leverage: 3,
+      target_position_size: 200,
+    });
+
+    service.execute(task.id);
+    expect(service.pause(task.id).status).toBe('paused');
+    expect(service.resume(task.id).status).toBe('running');
+    expect(service.stop(task.id).status).toBe('canceled');
+    expect(() => service.pause(task.id)).toThrow('Task cannot pause from status: canceled');
+    expect(audit.list().map((record) => record.action)).toEqual([
+      'task:create',
+      'task:execute',
+      'task:pause',
+      'task:resume',
+      'task:stop',
+    ]);
+  });
 });

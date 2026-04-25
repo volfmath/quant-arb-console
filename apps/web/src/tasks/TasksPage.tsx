@@ -1,18 +1,25 @@
-import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, Tag, Table } from 'antd';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Alert, Button, Space, Tag, Table, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import {
   getTaskOrders,
   getTaskPositions,
   getTasks,
+  pauseTask,
+  resumeTask,
+  stopTask,
   type ArbitrageTask,
   type TaskOrder,
   type TaskPosition,
 } from '../api/client';
 import { useAuthStore } from '../auth/auth-store';
 
-function createTaskColumns(onSelect: (task: ArbitrageTask) => void): ColumnsType<ArbitrageTask> {
+function createTaskColumns(
+  onSelect: (task: ArbitrageTask) => void,
+  onStatusAction: (task: ArbitrageTask, action: 'pause' | 'resume' | 'stop') => void,
+  actionLoading: boolean,
+): ColumnsType<ArbitrageTask> {
   return [
     { title: '任务', dataIndex: 'task_number', key: 'task_number', render: (value: number) => `#${value}` },
     { title: '币种', dataIndex: 'unified_symbol', key: 'unified_symbol' },
@@ -23,7 +30,7 @@ function createTaskColumns(onSelect: (task: ArbitrageTask) => void): ColumnsType
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (value: string) => <Tag color={value === 'running' ? 'green' : 'blue'}>{value}</Tag>,
+      render: renderStatus,
     },
     {
       title: '目标仓位',
@@ -41,9 +48,26 @@ function createTaskColumns(onSelect: (task: ArbitrageTask) => void): ColumnsType
       title: '操作',
       key: 'action',
       render: (_, row) => (
-        <Button size="small" onClick={() => onSelect(row)}>
-          查看
-        </Button>
+        <Space>
+          <Button size="small" onClick={() => onSelect(row)}>
+            查看
+          </Button>
+          {row.status === 'running' ? (
+            <Button size="small" loading={actionLoading} onClick={() => onStatusAction(row, 'pause')}>
+              暂停
+            </Button>
+          ) : null}
+          {row.status === 'paused' ? (
+            <Button size="small" loading={actionLoading} onClick={() => onStatusAction(row, 'resume')}>
+              恢复
+            </Button>
+          ) : null}
+          {row.status === 'running' || row.status === 'paused' || row.status === 'pending' ? (
+            <Button size="small" danger loading={actionLoading} onClick={() => onStatusAction(row, 'stop')}>
+              停止
+            </Button>
+          ) : null}
+        </Space>
       ),
     },
   ];
@@ -69,6 +93,7 @@ const positionColumns: ColumnsType<TaskPosition> = [
 
 export function TasksPage() {
   const token = useAuthStore((state) => state.token);
+  const queryClient = useQueryClient();
   const [selectedTask, setSelectedTask] = useState<ArbitrageTask | null>(null);
   const query = useQuery({
     queryKey: ['tasks'],
@@ -85,7 +110,29 @@ export function TasksPage() {
     queryFn: () => getTaskPositions(token ?? '', selectedTask!.id),
     enabled: Boolean(token && selectedTask),
   });
-  const columns = createTaskColumns(setSelectedTask);
+  const statusMutation = useMutation({
+    mutationFn: ({ task, action }: { task: ArbitrageTask; action: 'pause' | 'resume' | 'stop' }) => {
+      if (action === 'pause') {
+        return pauseTask(token ?? '', task.id);
+      }
+      if (action === 'resume') {
+        return resumeTask(token ?? '', task.id);
+      }
+      return stopTask(token ?? '', task.id);
+    },
+    onSuccess: async (task) => {
+      message.success(`任务 #${task.task_number} 状态已更新`);
+      setSelectedTask(task);
+      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard', 'strategy'] });
+    },
+    onError: () => message.error('任务状态更新失败'),
+  });
+  const columns = createTaskColumns(
+    setSelectedTask,
+    (task, action) => statusMutation.mutate({ task, action }),
+    statusMutation.isPending,
+  );
 
   return (
     <section>
@@ -104,6 +151,7 @@ export function TasksPage() {
       <section className="kpi-grid compact" aria-label="task summary">
         <KpiMini title="任务数" value={String(query.data?.total ?? 0)} />
         <KpiMini title="运行中" value={String(query.data?.items.filter((task) => task.status === 'running').length ?? 0)} />
+        <KpiMini title="已暂停" value={String(query.data?.items.filter((task) => task.status === 'paused').length ?? 0)} />
         <KpiMini title="待执行" value={String(query.data?.items.filter((task) => task.status === 'pending').length ?? 0)} />
       </section>
 
@@ -147,6 +195,12 @@ export function TasksPage() {
       ) : null}
     </section>
   );
+}
+
+function renderStatus(value: ArbitrageTask['status']) {
+  const color =
+    value === 'running' ? 'green' : value === 'paused' ? 'orange' : value === 'canceled' || value === 'failed' ? 'red' : 'blue';
+  return <Tag color={color}>{value}</Tag>;
 }
 
 function KpiMini({ title, value }: { title: string; value: string }) {

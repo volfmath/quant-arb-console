@@ -34,6 +34,9 @@ import {
   getAlerts,
   getTasks,
   login,
+  pauseTask,
+  resumeTask,
+  stopTask,
   toggleRiskRule,
   toggleStrategy,
   triggerCircuitBreak,
@@ -156,6 +159,33 @@ describe('api client', () => {
       2,
       'http://localhost:3000/api/v1/tasks/task-1/positions',
       expect.objectContaining({ headers: { Authorization: 'Bearer abc' } }),
+    );
+  });
+
+  it('mutates task lifecycle status with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'task-1', status: 'paused' }),
+    } as Response);
+
+    await pauseTask('abc', 'task-1');
+    await resumeTask('abc', 'task-1');
+    await stopTask('abc', 'task-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/tasks/task-1/pause',
+      expect.objectContaining({ method: 'PUT', headers: { Authorization: 'Bearer abc' } }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/tasks/task-1/resume',
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:3000/api/v1/tasks/task-1/stop',
+      expect.objectContaining({ method: 'PUT' }),
     );
   });
 

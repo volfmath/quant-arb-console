@@ -55,6 +55,9 @@ describe('Core API flow', () => {
     const pnlByStrategy = await get('/analytics/pnl/by-strategy');
     const pnlByExchange = await get('/analytics/pnl/by-exchange');
     const pnlExport = await getText('/analytics/pnl/export');
+    const pausedTask = await put(`/tasks/${task.id}/pause`);
+    const resumedTask = await put(`/tasks/${task.id}/resume`);
+    const stoppedTask = await put(`/tasks/${task.id}/stop`);
 
     expect(executed.status).toBe('running');
     expect(orders.total).toBe(2);
@@ -63,6 +66,9 @@ describe('Core API flow', () => {
     expect(pnlByStrategy.total).toBe(1);
     expect(pnlByExchange.total).toBe(2);
     expect(pnlExport).toContain('task_id,task_number,unified_symbol');
+    expect(pausedTask.status).toBe('paused');
+    expect(resumedTask.status).toBe('running');
+    expect(stoppedTask.status).toBe('canceled');
 
     const strategy = await post('/strategies', {
       name: '资金费套利_HTTP',
