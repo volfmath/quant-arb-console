@@ -50,6 +50,13 @@ export type OpportunityQueryParams = {
   size?: number;
 };
 
+export type CreateTaskFromOpportunityOptions = {
+  leverage?: number;
+  targetPositionSize?: number;
+  longAccountId?: string;
+  shortAccountId?: string;
+};
+
 export type ArbitrageTask = {
   id: string;
   task_number: number;
@@ -404,7 +411,11 @@ export async function getTasks(token: string): Promise<TaskListResponse> {
   return response.json() as Promise<TaskListResponse>;
 }
 
-export async function createTaskFromOpportunity(token: string, opportunity: Opportunity): Promise<ArbitrageTask> {
+export async function createTaskFromOpportunity(
+  token: string,
+  opportunity: Opportunity,
+  options: CreateTaskFromOpportunityOptions = {},
+): Promise<ArbitrageTask> {
   const response = await fetch(`${API_BASE_URL}/tasks`, {
     method: 'POST',
     headers: {
@@ -416,10 +427,10 @@ export async function createTaskFromOpportunity(token: string, opportunity: Oppo
       unified_symbol: opportunity.unified_symbol,
       long_exchange: opportunity.long_exchange,
       short_exchange: opportunity.short_exchange,
-      long_account_id: `${opportunity.long_exchange}-mock-account`,
-      short_account_id: `${opportunity.short_exchange}-mock-account`,
-      leverage: 3,
-      target_position_size: 200,
+      long_account_id: options.longAccountId ?? `${opportunity.long_exchange}-mock-account`,
+      short_account_id: options.shortAccountId ?? `${opportunity.short_exchange}-mock-account`,
+      leverage: options.leverage ?? 3,
+      target_position_size: options.targetPositionSize ?? 200,
     }),
   });
 

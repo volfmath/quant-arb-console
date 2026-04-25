@@ -287,6 +287,15 @@ body {
   text-align: right;
 }
 
+.task-modal-form {
+  display: grid;
+  gap: 12px;
+}
+
+.task-modal-form .ant-input-number-group-wrapper {
+  width: 100%;
+}
+
 .inline-alert {
   margin-bottom: 16px;
 }

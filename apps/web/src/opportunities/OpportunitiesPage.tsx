@@ -1,6 +1,6 @@
 import { ReloadOutlined, SearchOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Input, InputNumber, Progress, Select, Space, Spin, Table, Tag, message } from 'antd';
+import { Alert, Button, Input, InputNumber, Modal, Progress, Select, Space, Spin, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import {
@@ -24,11 +24,18 @@ const defaultFilters: OpportunityQueryParams = {
   size: 20,
 };
 
+type TaskDraft = {
+  opportunity: Opportunity;
+  leverage: number;
+  targetPositionSize: number;
+};
+
 export function OpportunitiesPage() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<OpportunityQueryParams>(defaultFilters);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  const [taskDraft, setTaskDraft] = useState<TaskDraft | null>(null);
   const query = useQuery({
     queryKey: ['opportunities', filters],
     queryFn: () => getOpportunities(token ?? '', filters),
@@ -50,12 +57,16 @@ export function OpportunitiesPage() {
     },
   });
   const createTaskMutation = useMutation({
-    mutationFn: async (opportunity: Opportunity) => {
-      const task = await createTaskFromOpportunity(token ?? '', opportunity);
+    mutationFn: async (draft: TaskDraft) => {
+      const task = await createTaskFromOpportunity(token ?? '', draft.opportunity, {
+        leverage: draft.leverage,
+        targetPositionSize: draft.targetPositionSize,
+      });
       return executeTask(token ?? '', task.id);
     },
     onSuccess: async () => {
       message.success('套利任务已创建并进入 mock 执行');
+      setTaskDraft(null);
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: () => {
@@ -96,14 +107,23 @@ export function OpportunitiesPage() {
       key: 'action',
       render: (_, row) => (
         <Space>
-          <Button size="small" onClick={() => setSelectedOpportunity(row)}>
+          <Button
+            size="small"
+            onClick={(event) => {
+              event.stopPropagation();
+              setSelectedOpportunity(row);
+            }}
+          >
             查看
           </Button>
           <Button
             type="primary"
             size="small"
             loading={createTaskMutation.isPending}
-            onClick={() => createTaskMutation.mutate(row)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setTaskDraft({ opportunity: row, leverage: 3, targetPositionSize: 200 });
+            }}
           >
             创建任务
           </Button>
@@ -214,9 +234,56 @@ export function OpportunitiesPage() {
             detail={detailQuery.data}
             loading={detailQuery.isLoading}
             error={Boolean(detailQuery.error)}
+            onCreateTask={(opportunity) => setTaskDraft({ opportunity, leverage: 3, targetPositionSize: 200 })}
           />
         ) : null}
       </section>
+
+      <Modal
+        title="创建套利任务"
+        open={Boolean(taskDraft)}
+        okText="创建并执行"
+        cancelText="取消"
+        confirmLoading={createTaskMutation.isPending}
+        onCancel={() => setTaskDraft(null)}
+        onOk={() => {
+          if (taskDraft) {
+            createTaskMutation.mutate(taskDraft);
+          }
+        }}
+      >
+        {taskDraft ? (
+          <div className="task-modal-form">
+            <Metric label="交易对" value={taskDraft.opportunity.unified_symbol} />
+            <Metric
+              label="方向"
+              value={`${taskDraft.opportunity.long_exchange} long / ${taskDraft.opportunity.short_exchange} short`}
+            />
+            <InputNumber
+              min={1}
+              max={10}
+              value={taskDraft.leverage}
+              addonBefore="杠杆"
+              addonAfter="x"
+              onChange={(value) =>
+                setTaskDraft((current) => (current ? { ...current, leverage: typeof value === 'number' ? value : 1 } : current))
+              }
+            />
+            <InputNumber
+              min={50}
+              step={50}
+              value={taskDraft.targetPositionSize}
+              addonBefore="目标仓位"
+              addonAfter="USDT"
+              onChange={(value) =>
+                setTaskDraft((current) =>
+                  current ? { ...current, targetPositionSize: typeof value === 'number' ? value : 50 } : current,
+                )
+              }
+            />
+          </div>
+        ) : null}
+      </Modal>
     </section>
   );
 }
@@ -226,11 +293,13 @@ function OpportunityDetailPanel({
   detail,
   loading,
   error,
+  onCreateTask,
 }: {
   opportunity: Opportunity;
   detail?: OpportunityDetail;
   loading: boolean;
   error: boolean;
+  onCreateTask: (opportunity: Opportunity) => void;
 }) {
   const data = detail ?? opportunity;
 
@@ -241,7 +310,12 @@ function OpportunityDetailPanel({
           <span>Opportunity Detail</span>
           <h2>{data.unified_symbol}</h2>
         </div>
-        <Tag color="blue">{data.feasibility_score}</Tag>
+        <Space>
+          <Tag color="blue">{data.feasibility_score}</Tag>
+          <Button size="small" type="primary" onClick={() => onCreateTask(opportunity)}>
+            创建任务
+          </Button>
+        </Space>
       </div>
 
       {error ? <Alert type="error" message="机会详情加载失败" showIcon /> : null}

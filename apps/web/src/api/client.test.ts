@@ -178,13 +178,19 @@ describe('api client', () => {
       settlement_time: '2026-04-25T16:00:00Z',
       settlement_countdown: '02:00:00',
       discovered_at: '2026-04-25T14:00:00Z',
+    }, {
+      leverage: 4,
+      targetPositionSize: 500,
     });
     await executeTask('abc', 'task-1');
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
       'http://localhost:3000/api/v1/tasks',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"leverage":4'),
+      }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
