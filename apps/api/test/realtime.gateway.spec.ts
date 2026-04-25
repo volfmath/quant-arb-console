@@ -80,4 +80,24 @@ describe('RealtimeGateway', () => {
     });
     expect(client.leave).toHaveBeenCalledWith('tasks');
   });
+
+  it('publishes typed events to a subscribed channel', () => {
+    const gateway = new RealtimeGateway();
+    const emit = vi.fn();
+    const server = {
+      to: vi.fn(() => ({ emit })),
+    };
+    gateway.server = server as never;
+
+    gateway.publish('opportunities', 'opportunity:update', { total: 1 });
+
+    expect(server.to).toHaveBeenCalledWith('opportunities');
+    expect(emit).toHaveBeenCalledWith(
+      'opportunity:update',
+      expect.objectContaining({
+        type: 'opportunity:update',
+        data: { total: 1 },
+      }),
+    );
+  });
 });
