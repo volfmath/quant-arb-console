@@ -116,6 +116,20 @@ describe('OpportunitiesService', () => {
     });
   });
 
+  it('bootstraps an audit record when audit log is opened before any scan', async () => {
+    const service = new OpportunitiesService(new MockExchangeAdapter());
+
+    const audit = await service.auditLog();
+
+    expect(audit.total).toBe(1);
+    expect(audit.items[0]).toMatchObject({
+      source: 'list',
+      monitored_symbols: 24,
+      comparable_symbols: 24,
+      opportunity_count: 24,
+    });
+  });
+
   it('marks audit symbols as not comparable when fewer than two exchanges return data', async () => {
     const adapter: ExchangeAdapter = {
       getFundingRates: async (): Promise<FundingRateSnapshot[]> => [

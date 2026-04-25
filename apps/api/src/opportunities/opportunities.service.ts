@@ -81,6 +81,10 @@ export class OpportunitiesService {
   }
 
   async auditLog(options: { page?: number; size?: number } = {}) {
+    if (!this.auditRecords.length) {
+      await this.scan({}, 'list');
+    }
+
     const page = positiveInteger(options.page, 1);
     const size = positiveInteger(options.size, 20);
     const start = (page - 1) * size;

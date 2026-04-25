@@ -338,20 +338,25 @@ export function OpportunitiesPage() {
             key: 'audit',
             label: '扫描审计',
             children: (
-              <Table<OpportunityScanAudit>
-                rowKey="id"
-                className="data-table"
-                loading={auditQuery.isLoading}
-                columns={auditColumns}
-                dataSource={auditQuery.data?.items ?? []}
-                pagination={false}
-                size="middle"
-                locale={{
-                  emptyText: scanMutation.isPending
-                    ? '扫描中，审计记录生成后会显示在这里'
-                    : '暂无扫描审计记录，请先点击右上角“扫描”',
-                }}
-              />
+              <>
+                {auditQuery.error ? (
+                  <Alert type="error" message="扫描审计加载失败，请确认 API 已更新并重新部署" showIcon />
+                ) : null}
+                <Table<OpportunityScanAudit>
+                  rowKey="id"
+                  className="data-table"
+                  loading={auditQuery.isLoading || auditQuery.isFetching}
+                  columns={auditColumns}
+                  dataSource={auditQuery.data?.items ?? []}
+                  pagination={false}
+                  size="middle"
+                  locale={{
+                    emptyText: scanMutation.isPending
+                      ? '扫描中，审计记录生成后会显示在这里'
+                      : '暂无扫描审计记录，请先点击右上角“扫描”',
+                  }}
+                />
+              </>
             ),
           },
         ]}
