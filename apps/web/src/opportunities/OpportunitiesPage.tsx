@@ -147,24 +147,24 @@ export function OpportunitiesPage() {
 
   const auditColumns: ColumnsType<OpportunityScanAudit> = [
     {
-      title: 'æ—¶é—´',
+      title: '时间',
       dataIndex: 'scanned_at',
       key: 'scanned_at',
       render: (value: string) => new Date(value).toLocaleString(),
     },
     {
-      title: 'æ¥æº',
+      title: '来源',
       dataIndex: 'source',
       key: 'source',
       render: (value: OpportunityScanAudit['source']) => (
         <Tag color={value === 'manual_scan' ? 'blue' : 'default'}>{value}</Tag>
       ),
     },
-    { title: 'ç›‘æŽ§å¸ç§', dataIndex: 'monitored_symbols', key: 'monitored_symbols' },
-    { title: 'å¯æ¯”è¾ƒå¸ç§', dataIndex: 'comparable_symbols', key: 'comparable_symbols' },
-    { title: 'è¡Œæƒ…å¿«ç…§', dataIndex: 'funding_snapshots', key: 'funding_snapshots' },
+    { title: '监控币种', dataIndex: 'monitored_symbols', key: 'monitored_symbols' },
+    { title: '可比较币种', dataIndex: 'comparable_symbols', key: 'comparable_symbols' },
+    { title: '行情快照', dataIndex: 'funding_snapshots', key: 'funding_snapshots' },
     {
-      title: 'æ•°æ®æº',
+      title: '数据源',
       dataIndex: 'data_sources',
       key: 'data_sources',
       render: (sources: string[]) => (
@@ -175,16 +175,16 @@ export function OpportunitiesPage() {
         </Space>
       ),
     },
-    { title: 'æœºä¼šæ•°', dataIndex: 'opportunity_count', key: 'opportunity_count' },
+    { title: '机会数', dataIndex: 'opportunity_count', key: 'opportunity_count' },
     {
-      title: 'æœ€ä½³æœºä¼š',
+      title: '最佳机会',
       dataIndex: 'best_opportunity',
       key: 'best_opportunity',
       render: (value: OpportunityScanAudit['best_opportunity']) =>
         value ? `${value.symbol}: ${value.long_exchange} long / ${value.short_exchange} short` : '-',
     },
     {
-      title: 'å¸ç§è¦†ç›–',
+      title: '币种覆盖',
       dataIndex: 'symbols',
       key: 'symbols',
       render: (symbols: OpportunityScanAudit['symbols']) => {
@@ -323,7 +323,7 @@ export function OpportunitiesPage() {
           },
           {
             key: 'audit',
-            label: 'æ‰«æå®¡è®¡',
+            label: '扫描审计',
             children: (
               <Table<OpportunityScanAudit>
                 rowKey="id"

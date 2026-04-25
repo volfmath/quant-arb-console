@@ -157,7 +157,7 @@ describe('OpportunitiesPage', () => {
       </QueryClientProvider>,
     );
 
-    fireEvent.click(await screen.findByText('æ‰«æå®¡è®¡'));
+    fireEvent.click(await screen.findByText('扫描审计'));
 
     expect(await screen.findByText('manual_scan')).toBeTruthy();
     expect((await screen.findAllByText('binance')).length).toBeGreaterThan(0);
