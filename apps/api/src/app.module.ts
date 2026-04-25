@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
+import { ExchangeModule } from './exchanges/exchange.module';
 import { HealthController } from './health.controller';
 import { PermissionGuard } from './permissions/permission.guard';
+import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, ExchangeModule, RealtimeModule],
   controllers: [HealthController],
   providers: [
     {
