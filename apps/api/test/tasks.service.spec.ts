@@ -51,6 +51,8 @@ describe('TasksService', () => {
     expect(executed.status).toBe('running');
     expect(executed.long_qty).toBeGreaterThan(0);
     expect(executed.short_qty).toBe(executed.long_qty);
+    expect(service.orders(task.id).total).toBe(2);
+    expect(service.positions(task.id).total).toBe(2);
     expect(audit.list().map((record) => record.action)).toEqual(['task:create', 'task:execute']);
   });
 });

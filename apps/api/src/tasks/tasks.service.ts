@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
-import { ExecutionService } from '../execution/execution.service';
+import { ExecutionService, type ExecutedOrder, type OpenPosition } from '../execution/execution.service';
 import { RiskService } from '../risk/risk.service';
 
 export type CreateTaskBody = {
@@ -40,6 +40,8 @@ export type ArbitrageTask = {
 @Injectable()
 export class TasksService {
   private readonly tasks: ArbitrageTask[] = [];
+  private readonly taskOrders: ExecutedOrder[] = [];
+  private readonly taskPositions: OpenPosition[] = [];
   private nextTaskNumber = 1;
 
   constructor(
@@ -129,6 +131,8 @@ export class TasksService {
     task.long_qty = result.long_qty;
     task.short_qty = result.short_qty;
     task.started_at = result.started_at;
+    this.taskOrders.unshift(...result.orders);
+    this.taskPositions.unshift(...result.positions);
 
     this.auditService.record({
       action: 'task:execute',
@@ -138,5 +142,31 @@ export class TasksService {
     });
 
     return task;
+  }
+
+  orders(id: string) {
+    this.assertTaskExists(id);
+
+    const items = this.taskOrders.filter((order) => order.task_id === id);
+    return {
+      items,
+      total: items.length,
+    };
+  }
+
+  positions(id: string) {
+    this.assertTaskExists(id);
+
+    const items = this.taskPositions.filter((position) => position.task_id === id);
+    return {
+      items,
+      total: items.length,
+    };
+  }
+
+  private assertTaskExists(id: string): void {
+    if (!this.tasks.some((task) => task.id === id)) {
+      throw new NotFoundException('Task not found');
+    }
   }
 }

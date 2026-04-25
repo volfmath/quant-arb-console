@@ -28,5 +28,8 @@ describe('ExecutionService', () => {
     expect(result.status).toBe('running');
     expect(result.actual_position_size).toBe(200);
     expect(result.long_qty).toBe(result.short_qty);
+    expect(result.orders).toHaveLength(2);
+    expect(result.positions).toHaveLength(2);
+    expect(result.orders.map((order) => order.leg)).toEqual(['long', 'short']);
   });
 });

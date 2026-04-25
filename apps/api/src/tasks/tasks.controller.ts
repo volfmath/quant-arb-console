@@ -25,4 +25,16 @@ export class TasksController {
   execute(@Param('id') id: string) {
     return this.tasksService.execute(id);
   }
+
+  @Get(':id/orders')
+  @RequirePermission('task:view')
+  orders(@Param('id') id: string) {
+    return this.tasksService.orders(id);
+  }
+
+  @Get(':id/positions')
+  @RequirePermission('task:view')
+  positions(@Param('id') id: string) {
+    return this.tasksService.positions(id);
+  }
 }
