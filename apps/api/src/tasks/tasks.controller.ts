@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { CreateTaskBody, TasksService } from './tasks.service';
@@ -19,5 +19,10 @@ export class TasksController {
   create(@Body() body: CreateTaskBody) {
     return this.tasksService.create(body);
   }
-}
 
+  @Post(':id/execute')
+  @RequirePermission('task:create')
+  execute(@Param('id') id: string) {
+    return this.tasksService.execute(id);
+  }
+}

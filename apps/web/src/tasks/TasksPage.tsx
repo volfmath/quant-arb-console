@@ -14,7 +14,7 @@ const columns: ColumnsType<ArbitrageTask> = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    render: (value: string) => <Tag color="blue">{value}</Tag>,
+    render: (value: string) => <Tag color={value === 'running' ? 'green' : 'blue'}>{value}</Tag>,
   },
   {
     title: '目标仓位',
@@ -79,4 +79,3 @@ function KpiMini({ title, value }: { title: string; value: string }) {
     </div>
   );
 }
-

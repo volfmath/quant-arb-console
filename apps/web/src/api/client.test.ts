@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getOpportunities, getTasks, login } from './client';
+import { createTaskFromOpportunity, executeTask, getOpportunities, getTasks, login } from './client';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -54,6 +54,47 @@ describe('api client', () => {
       expect.objectContaining({
         headers: { Authorization: 'Bearer task-token' },
       }),
+    );
+  });
+
+  it('creates and executes tasks with bearer token', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'task-1',
+        task_number: 1,
+        status: 'running',
+      }),
+    } as Response);
+
+    await createTaskFromOpportunity('abc', {
+      id: 'opp-1',
+      unified_symbol: 'BTC/USDT:USDT',
+      symbol_display: 'BTC',
+      long_exchange: 'binance',
+      short_exchange: 'okx',
+      long_funding_rate: -0.0001,
+      short_funding_rate: 0.0001,
+      rate_spread: 0.0002,
+      spread_8h_pct: 0.02,
+      estimated_pnl_8h: 0.2,
+      annualized_return: 21.9,
+      feasibility_score: 80,
+      settlement_time: '2026-04-25T16:00:00Z',
+      settlement_countdown: '02:00:00',
+      discovered_at: '2026-04-25T14:00:00Z',
+    });
+    await executeTask('abc', 'task-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/api/v1/tasks',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:3000/api/v1/tasks/task-1/execute',
+      expect.objectContaining({ method: 'POST' }),
     );
   });
 });

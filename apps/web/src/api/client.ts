@@ -36,16 +36,21 @@ export type OpportunityListResponse = {
 export type ArbitrageTask = {
   id: string;
   task_number: number;
-  status: 'pending';
+  status: 'pending' | 'confirming' | 'running' | 'failed';
   unified_symbol: string;
   long_exchange: string;
   short_exchange: string;
   leverage: number;
   target_position_size: number;
+  actual_position_size: number;
+  margin_used: number;
+  long_qty: number;
+  short_qty: number;
   realized_pnl: number;
   unrealized_pnl: number;
   net_pnl: number;
   created_at: string;
+  started_at?: string;
 };
 
 export type TaskListResponse = {
@@ -95,4 +100,45 @@ export async function getTasks(token: string): Promise<TaskListResponse> {
   }
 
   return response.json() as Promise<TaskListResponse>;
+}
+
+export async function createTaskFromOpportunity(token: string, opportunity: Opportunity): Promise<ArbitrageTask> {
+  const response = await fetch(`${API_BASE_URL}/tasks`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      opportunity_id: opportunity.id,
+      unified_symbol: opportunity.unified_symbol,
+      long_exchange: opportunity.long_exchange,
+      short_exchange: opportunity.short_exchange,
+      long_account_id: `${opportunity.long_exchange}-mock-account`,
+      short_account_id: `${opportunity.short_exchange}-mock-account`,
+      leverage: 3,
+      target_position_size: 200,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('任务创建失败');
+  }
+
+  return response.json() as Promise<ArbitrageTask>;
+}
+
+export async function executeTask(token: string, taskId: string): Promise<ArbitrageTask> {
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/execute`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('任务执行失败');
+  }
+
+  return response.json() as Promise<ArbitrageTask>;
 }
