@@ -2,6 +2,11 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { AuditService } from '../audit/audit.service';
 import { getAppConfig } from '../config/app.config';
 import type { UserRole } from '../permissions/role-permissions';
+import {
+  type EncryptedCredentialBundle,
+  encryptCredentialBundle,
+  maskCredential,
+} from '../security/credential-vault';
 
 export type ExchangeRecord = {
   id: string;
@@ -18,8 +23,14 @@ export type AccountRecord = {
   name: string;
   status: 'active' | 'disabled' | 'deleted';
   is_testnet: boolean;
+  credentials_configured: boolean;
+  api_key_masked?: string;
   created_at: string;
   deleted_at?: string;
+};
+
+type StoredAccountRecord = AccountRecord & {
+  encrypted_credentials?: EncryptedCredentialBundle;
 };
 
 export type UserRecord = {
@@ -41,6 +52,9 @@ export type CreateAccountBody = {
   exchange_code?: string;
   name?: string;
   is_testnet?: boolean;
+  api_key?: string;
+  api_secret?: string;
+  passphrase?: string;
 };
 
 export type CreateUserBody = {
@@ -75,13 +89,14 @@ export class SettingsService {
     },
   ];
 
-  private readonly accounts: AccountRecord[] = [
+  private readonly accounts: StoredAccountRecord[] = [
     {
       id: 'account-binance-mock',
       exchange_code: 'binance',
       name: 'binance-mock-account',
       status: 'active',
       is_testnet: true,
+      credentials_configured: false,
       created_at: new Date().toISOString(),
     },
   ];
@@ -132,7 +147,7 @@ export class SettingsService {
   }
 
   listAccounts() {
-    const items = this.accounts.filter((account) => account.status !== 'deleted');
+    const items = this.accounts.filter((account) => account.status !== 'deleted').map((account) => sanitizeAccount(account));
     return { items, total: items.length, page: 1, size: items.length };
   }
 
@@ -145,12 +160,21 @@ export class SettingsService {
       throw new BadRequestException('Exchange does not exist');
     }
 
-    const account: AccountRecord = {
+    const encryptedCredentials = encryptCredentialBundle({
+      api_key: body.api_key,
+      api_secret: body.api_secret,
+      passphrase: body.passphrase,
+    });
+    const apiKeyMasked = maskCredential(body.api_key);
+    const account: StoredAccountRecord = {
       id: crypto.randomUUID(),
       exchange_code: exchangeCode,
       name: body.name.trim(),
       status: 'active',
       is_testnet: body.is_testnet ?? true,
+      credentials_configured: Boolean(encryptedCredentials),
+      api_key_masked: apiKeyMasked,
+      encrypted_credentials: encryptedCredentials,
       created_at: new Date().toISOString(),
     };
     this.accounts.unshift(account);
@@ -158,15 +182,15 @@ export class SettingsService {
       action: 'account:create',
       resourceType: 'account',
       resourceId: account.id,
-      afterState: account,
+      afterState: sanitizeAccount(account),
     });
 
-    return account;
+    return sanitizeAccount(account);
   }
 
   deleteAccount(id: string): AccountRecord {
     const account = this.findAccount(id);
-    const beforeState = { ...account };
+    const beforeState = sanitizeAccount(account);
     account.status = 'deleted';
     account.deleted_at = new Date().toISOString();
     this.auditService.record({
@@ -174,10 +198,10 @@ export class SettingsService {
       resourceType: 'account',
       resourceId: account.id,
       beforeState,
-      afterState: account,
+      afterState: sanitizeAccount(account),
     });
 
-    return account;
+    return sanitizeAccount(account);
   }
 
   listUsers() {
@@ -271,7 +295,7 @@ export class SettingsService {
     };
   }
 
-  private findAccount(id: string): AccountRecord {
+  private findAccount(id: string): StoredAccountRecord {
     const account = this.accounts.find((item) => item.id === id && item.status !== 'deleted');
     if (!account) {
       throw new NotFoundException('Account not found');
@@ -288,4 +312,9 @@ export class SettingsService {
 
     return user;
   }
+}
+
+function sanitizeAccount(account: StoredAccountRecord): AccountRecord {
+  const { encrypted_credentials: _encryptedCredentials, ...sanitized } = account;
+  return sanitized;
 }

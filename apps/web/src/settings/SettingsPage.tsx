@@ -48,6 +48,9 @@ export function SettingsPage() {
           exchange_code: String(values.exchange_code),
           name: String(values.name),
           is_testnet: values.is_testnet !== 'false',
+          api_key: optionalString(values.api_key),
+          api_secret: optionalString(values.api_secret),
+          passphrase: optionalString(values.passphrase),
         });
       }
       return createUser(token ?? '', {
@@ -207,6 +210,13 @@ function accountColumns(onDelete: (id: string) => void): ColumnsType<AccountReco
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '交易所', dataIndex: 'exchange_code', key: 'exchange_code' },
     { title: '环境', dataIndex: 'is_testnet', key: 'is_testnet', render: (value: boolean) => (value ? 'testnet/mock' : 'live') },
+    { title: 'API Key', dataIndex: 'api_key_masked', key: 'api_key_masked', render: (value: string | undefined) => value ?? '-' },
+    {
+      title: '凭证',
+      dataIndex: 'credentials_configured',
+      key: 'credentials_configured',
+      render: (value: boolean) => <Tag color={value ? 'blue' : 'default'}>{value ? 'configured' : 'empty'}</Tag>,
+    },
     { title: '状态', dataIndex: 'status', key: 'status', render: (value: string) => <Tag color="green">{value}</Tag> },
     {
       title: '操作',
@@ -293,6 +303,15 @@ function AccountForm() {
       <Form.Item name="is_testnet" label="环境" initialValue="true">
         <Select options={environmentOptions} />
       </Form.Item>
+      <Form.Item name="api_key" label="API Key">
+        <Input autoComplete="off" />
+      </Form.Item>
+      <Form.Item name="api_secret" label="API Secret">
+        <Input.Password autoComplete="new-password" />
+      </Form.Item>
+      <Form.Item name="passphrase" label="Passphrase">
+        <Input.Password autoComplete="new-password" />
+      </Form.Item>
     </>
   );
 }
@@ -329,4 +348,9 @@ async function invalidateSettings(queryClient: ReturnType<typeof useQueryClient>
     queryClient.invalidateQueries({ queryKey: ['system-status'] }),
     queryClient.invalidateQueries({ queryKey: ['settings'] }),
   ]);
+}
+
+function optionalString(value: unknown): string | undefined {
+  const text = typeof value === 'string' ? value.trim() : '';
+  return text ? text : undefined;
 }

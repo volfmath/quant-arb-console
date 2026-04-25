@@ -13,6 +13,7 @@ describe('SettingsService', () => {
 
     expect(service.listExchanges().total).toBe(3);
     expect(account.is_testnet).toBe(true);
+    expect(account.credentials_configured).toBe(false);
     expect(deleted.status).toBe('deleted');
     expect(service.listAccounts().items.some((item) => item.id === account.id)).toBe(false);
     expect(audit.list().map((record) => record.action)).toEqual([
@@ -20,6 +21,30 @@ describe('SettingsService', () => {
       'account:create',
       'account:delete',
     ]);
+  });
+
+  it('stores account credentials encrypted and only exposes masked API keys', () => {
+    process.env.CREDENTIAL_ENCRYPTION_KEY = 'settings-test-key';
+    const service = new SettingsService(new AuditService());
+
+    const account = service.createAccount({
+      exchange_code: 'binance',
+      name: 'binance-keyed-account',
+      api_key: 'abcd1234wxyz',
+      api_secret: 'super-secret',
+      passphrase: 'pass',
+    });
+    const listed = service.listAccounts().items.find((item) => item.id === account.id);
+    const auditLog = service.auditLogs().items[0];
+
+    expect(account).toMatchObject({
+      credentials_configured: true,
+      api_key_masked: 'abcd****wxyz',
+    });
+    expect(account).not.toHaveProperty('encrypted_credentials');
+    expect(listed).not.toHaveProperty('encrypted_credentials');
+    expect(JSON.stringify(auditLog)).not.toContain('super-secret');
+    delete process.env.CREDENTIAL_ENCRYPTION_KEY;
   });
 
   it('manages users and role assignment', () => {

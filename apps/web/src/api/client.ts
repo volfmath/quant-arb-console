@@ -279,6 +279,8 @@ export type AccountRecord = {
   name: string;
   status: 'active' | 'disabled' | 'deleted';
   is_testnet: boolean;
+  credentials_configured: boolean;
+  api_key_masked?: string;
   created_at: string;
   deleted_at?: string;
 };
@@ -728,7 +730,14 @@ export async function getAccounts(token: string): Promise<ListResponse<AccountRe
 
 export async function createAccount(
   token: string,
-  body: { exchange_code: string; name: string; is_testnet?: boolean },
+  body: {
+    exchange_code: string;
+    name: string;
+    is_testnet?: boolean;
+    api_key?: string;
+    api_secret?: string;
+    passphrase?: string;
+  },
 ): Promise<AccountRecord> {
   return postJson(token, 'accounts', body, 'Account create failed') as Promise<AccountRecord>;
 }
